@@ -1,6 +1,9 @@
+username : root  
+password : anycloudv500
+
 # autobuild settings
 - Type of chip : AK3760D (64M RAM)  
-- Type of screen : MIPI  
+- Type of screen : RGB  
 - Type of flash : spi nor flash  
 - Wifi card : rtl8188ftv  
 
