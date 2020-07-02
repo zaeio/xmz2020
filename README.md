@@ -1,6 +1,3 @@
-username : root  
-password : anycloudv500
-
 # 一键编译
 在/AnyCloudV500_PDK_V1.02/PDK/SDK/sdk_release_dir下执行`./auto_build.sh`  
 
@@ -22,3 +19,15 @@ sudo apt-get install lib32z1
 # burnfile
 编译生成的文件`uImage`、`anyka_ev500.dtb`、`u-boot.bin`、`root.sqsh4`、`usr.jffs2`、`usr.sqsh4`，用burntool烧录需要将6个文件全部复制到burntool目录下。不要用uart_burntool。  
 
+# NFS挂载
+在`/etc/exports`  最后添加
+>/home/nfs_share *(rw,sync,no_root_squash,no_subtree_check)   
+
+重启NFS  
+>sudo /etc/init.d/nfs-kernel-server restart  
+
+登陆板子终端  
+username : root  
+password : anycloudv500  
+先运行`nfs_start.sh`，然后
+>mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt  
