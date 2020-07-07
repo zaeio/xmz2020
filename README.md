@@ -55,76 +55,33 @@ password : anycloudv500
 
     ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/Qt_transplant/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
 
-在根文件系统中改好`/etc/profile`重新编译烧录并source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
+make install后将`arm-tslib`复制到nfs共享目录  
+修改`/etc/profile`
+```
+export TSLIB_ROOT=/mnt/arm-tslib
+export TSLIB_CONSOLEDEVICE=none
+export TSLIB_FBDEVICE=/dev/fb0
+export TSLIB_TSDEVICE=/dev/input/event1
+export TSLIB_CONFFILE=$TSLIB_ROOT/etc/ts.conf
+export TSLIB_PLUGINDIR=$TSLIB_ROOT/lib/ts
+export TSLIB_CALIBFILE=/etc/pointercal
+export LD_PRELOAD=$TSLIB_ROOT/lib/libts.so
+export QT_QPA_FB_TSLIB=1QT_QPA_FB_TSLIB=1
+```
+
+需要把`/arm-tslib/lib`中的四个libts复制到`rootfs.tar.gz`的`/lib`中。并参考移植手册修改`rootfs.tar.gz`中的`/etc/profile`并重新编译和烧录。  
+source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
 ## 编译Qt
-autoconfigure.sh配置
+`autoconfigure.sh`配置和`qmake.conf`配置见documents  
+make install后将`arm-qt`复制到nfs共享目录  
+修改`/etc/profile`
 ```
-#!/bin/sh
-./configure \
--prefix /home/bk/Qt_transplant/arm-qt \
--confirm-license \
--opensource \
--shared \
--release \
--make libs \
--xplatform linux-arm-gnueabi-g++ \
--optimized-qmake \
--pch \
--qt-sql-sqlite \
--qt-libjpeg \
--qt-libpng \
--qt-zlib \
--no-opengl \
--no-sse2 \
--no-openssl \
--no-cups \
--no-glib \
--no-dbus \
--no-xcb \
--no-xcursor -no-xfixes -no-xrandr -no-xrender \
--no-separate-debug-info \
--no-fontconfig \
--nomake examples -nomake tools -nomake tests -no-iconv \
--tslib \
--I/home/bk/Qt_transplant/arm-tslib/include \
--L/home/bk/Qt_transplant/arm-tslib/lib
-exit
-```
-qmake.comf配置
-```
-#
-# qmake configuration for building with arm-linux-gnueabi-g++
-#
-
-MAKEFILE_GENERATOR      = UNIX
-CONFIG                 += incremental
-QMAKE_INCREMENTAL_STYLE = sublib
-
-QT_QPA_DEFAULT_PLATFORM = linuxfb
-#QMAKE_CFLAGS += -O2 -march=armv5tej -mtune=ARM926EJ-S -mfpu=neon -mfloat-abi=hard
-#QMAKE_CXXFLAGS += -O2 -march=armv5tej -mtune=ARM926EJ-S -mfpu=neon -mfloat-abi=hard
-
-QMAKE_CFLAGS += -msoft-float -D__GCC_FLOAT_NOT_NEEDED -march=armv5 -mtune=arm926ej-s
-QMAKE_CXXFLAGS += -msoft-float -D__GCC_FLOAT_NOT_NEEDED -march=armv5 -mtune=arm926ej-s
-
-include(../common/linux.conf)
-include(../common/gcc-base-unix.conf)
-include(../common/g++-unix.conf)
-
-# modifications to g++.conf
-QMAKE_CC                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc -lts
-QMAKE_CXX               = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
-QMAKE_LINK              = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
-QMAKE_LINK_SHLIB        = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
-
-# modifications to linux.conf
-QMAKE_AR                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-ar cqs
-QMAKE_OBJCOPY           = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-objcopy
-QMAKE_NM                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-nm -P
-QMAKE_STRIP             = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-strip
-
-QMAKE_INCDIR += /home/bk/Qt_transplant/arm-tslib/include
-QMAKE_LIBDIR += /home/bk/Qt_transplant/arm-tslib/lib
-load(qt_config)
+export QT_ROOT=/mnt/arm-qt
+export QT_QPA_GENERIC_PLUGINS=tslib:/dev/input/event1:edevmouse:/dev/input/event3
+export QT_QPA_FONTDIR=/mnt/arm-qt/lib/fonts
+export QT_QPA_PLATFORM_PLUGIN_PATH=$QT_ROOT/plugins
+export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0
+export QT_PLUGIN_PATH=$QT_ROOT/plugins
+export LD_LIBRARY_PATH=$QT_ROOT/lib:$QT_ROOT/plugins/platforms
 ```
