@@ -33,11 +33,16 @@ burnfile中为编译生成的文件`uImage`、`anyka_ev500.dtb`、`u-boot.bin`�
 查看串口号`ls -l /dev/ttyUSB*  `  
 username : root  
 password : anycloudv500  
-先运行`nfs_start.sh`，然后
+先运行`nfs_start.sh`，然后进行挂载，根据情况修改IP和主机目录。
 
     mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt  
 
 交叉编译工具链`arm-anykav500-linux-uclibcgnueabi-gcc`
+
+## 修改根文件系统
+在`/AnyCloudV500_patch2-1/PDK/SDK/sdk_release_dir/platform/rootfs/rootfs.tar.gz`中进行修改，修改完成后重新编译和烧录。  
+在`/usr/sbin/nfs_start.sh`最后添加挂载指令，就不用每次手动输入了。
+>mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
 # Qt移植
 主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤（待更新）
@@ -50,3 +55,76 @@ password : anycloudv500
 
     ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/Qt_transplant/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
 
+在根文件系统中改好`/etc/profile`重新编译烧录并source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
+
+## 编译Qt
+autoconfigure.sh配置
+```
+#!/bin/sh
+./configure \
+-prefix /home/bk/Qt_transplant/arm-qt \
+-confirm-license \
+-opensource \
+-shared \
+-release \
+-make libs \
+-xplatform linux-arm-gnueabi-g++ \
+-optimized-qmake \
+-pch \
+-qt-sql-sqlite \
+-qt-libjpeg \
+-qt-libpng \
+-qt-zlib \
+-no-opengl \
+-no-sse2 \
+-no-openssl \
+-no-cups \
+-no-glib \
+-no-dbus \
+-no-xcb \
+-no-xcursor -no-xfixes -no-xrandr -no-xrender \
+-no-separate-debug-info \
+-no-fontconfig \
+-nomake examples -nomake tools -nomake tests -no-iconv \
+-tslib \
+-I/home/bk/Qt_transplant/arm-tslib/include \
+-L/home/bk/Qt_transplant/arm-tslib/lib
+exit
+```
+qmake.comf配置
+```
+#
+# qmake configuration for building with arm-linux-gnueabi-g++
+#
+
+MAKEFILE_GENERATOR      = UNIX
+CONFIG                 += incremental
+QMAKE_INCREMENTAL_STYLE = sublib
+
+QT_QPA_DEFAULT_PLATFORM = linuxfb
+#QMAKE_CFLAGS += -O2 -march=armv5tej -mtune=ARM926EJ-S -mfpu=neon -mfloat-abi=hard
+#QMAKE_CXXFLAGS += -O2 -march=armv5tej -mtune=ARM926EJ-S -mfpu=neon -mfloat-abi=hard
+
+QMAKE_CFLAGS += -msoft-float -D__GCC_FLOAT_NOT_NEEDED -march=armv5 -mtune=arm926ej-s
+QMAKE_CXXFLAGS += -msoft-float -D__GCC_FLOAT_NOT_NEEDED -march=armv5 -mtune=arm926ej-s
+
+include(../common/linux.conf)
+include(../common/gcc-base-unix.conf)
+include(../common/g++-unix.conf)
+
+# modifications to g++.conf
+QMAKE_CC                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc -lts
+QMAKE_CXX               = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
+QMAKE_LINK              = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
+QMAKE_LINK_SHLIB        = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-g++ -lts
+
+# modifications to linux.conf
+QMAKE_AR                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-ar cqs
+QMAKE_OBJCOPY           = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-objcopy
+QMAKE_NM                = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-nm -P
+QMAKE_STRIP             = /opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-strip
+
+QMAKE_INCDIR += /home/bk/Qt_transplant/arm-tslib/include
+QMAKE_LIBDIR += /home/bk/Qt_transplant/arm-tslib/lib
+load(qt_config)
+```
