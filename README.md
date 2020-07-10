@@ -41,11 +41,13 @@ password : anycloudv500
 
 ## 修改根文件系统
 在`/AnyCloudV500_patch2-1/PDK/SDK/sdk_release_dir/platform/rootfs/rootfs.tar.gz`中进行修改，修改完成后重新编译和烧录。  
-在`/usr/sbin/nfs_start.sh`最后添加挂载指令，就不用每次手动输入了。
->mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
+在`/usr/sbin/nfs_start.sh`最后添加挂载指令，就不用每次手动输入了。  
+    
+    mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
 # Qt移植
-主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤
+板子可能带不动qt，考虑只用tslib写界面。  
+主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤。  
 ## 编译Tslib
 安装automake工具  
 
@@ -56,7 +58,7 @@ password : anycloudv500
     ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/Qt_transplant/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
 
 make install后将`arm-tslib`复制到nfs共享目录  
-在nfs目录中新建`profile`文件
+在nfs目录中新建`profile`文件，然后`source /mnt/profile`，这样就不用每次修改根文件然后烧录。  
 ```
 export T_ROOT=/mnt/arm-tslib
 export LD_LIBRARY_PATH=/mnt/arm-tslib/lib:$LD_LIBRARY_PATH
@@ -69,7 +71,7 @@ export POINTERCAL_FILE=/etc/pointercal
 export TSLIB_CALIBFILE=/etc/pointercal
 ```
 
-`source /mnt/profile`以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
+source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
 ## 编译Qt
 `autoconfigure.sh`配置和`qmake.conf`配置见documents  
