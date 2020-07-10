@@ -56,32 +56,31 @@ password : anycloudv500
     ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/Qt_transplant/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
 
 make install后将`arm-tslib`复制到nfs共享目录  
-修改`/etc/profile`
+在nfs目录中新建`profile`文件
 ```
-export TSLIB_ROOT=/mnt/arm-tslib
+export T_ROOT=/mnt/arm-tslib
+export LD_LIBRARY_PATH=/mnt/arm-tslib/lib:$LD_LIBRARY_PATH
 export TSLIB_CONSOLEDEVICE=none
 export TSLIB_FBDEVICE=/dev/fb0
 export TSLIB_TSDEVICE=/dev/input/event1
-export TSLIB_CONFFILE=$TSLIB_ROOT/etc/ts.conf
-export TSLIB_PLUGINDIR=$TSLIB_ROOT/lib/ts
+export TSLIB_PLUGINDIR=$T_ROOT/lib/ts
+export TSLIB_CONFFILE=$T_ROOT/etc/ts.conf
+export POINTERCAL_FILE=/etc/pointercal
 export TSLIB_CALIBFILE=/etc/pointercal
-export LD_PRELOAD=$TSLIB_ROOT/lib/libts.so
-export QT_QPA_FB_TSLIB=1QT_QPA_FB_TSLIB=1
 ```
 
-需要把`/arm-tslib/lib`中的四个libts复制到`rootfs.tar.gz`的`/lib`中。并参考移植手册修改`rootfs.tar.gz`中的`/etc/profile`并重新编译和烧录。  
 source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
 ## 编译Qt
 `autoconfigure.sh`配置和`qmake.conf`配置见documents  
 make install后将`arm-qt`复制到nfs共享目录  
-修改`/etc/profile`
+在`profile`后面添加
 ```
-export QT_ROOT=/mnt/arm-qt
-export QT_QPA_GENERIC_PLUGINS=tslib:/dev/input/event1:edevmouse:/dev/input/event3
-export QT_QPA_FONTDIR=/mnt/arm-qt/lib/fonts
-export QT_QPA_PLATFORM_PLUGIN_PATH=$QT_ROOT/plugins
+export QTEDIR=/mnt/arm-qt
+export LD_LIBRARY_PATH=/mnt/arm-qt/lib:$QTEDIR/plugins/platforms:$LD_LIBRARY_PATH
+export QT_QPA_GENERIC_PLUGINS=tslib
+export QT_QPA_FONTDIR=$QTEDIR/lib/fonts 
+export QT_QPA_PLATFORM_PLUGIN_PATH=$QTEDIR/plugins
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0
-export QT_PLUGIN_PATH=$QT_ROOT/plugins
-export LD_LIBRARY_PATH=$QT_ROOT/lib:$QT_ROOT/plugins/platforms
 ```
+目前`arm_qt_test`界面需要很长时间才能加载出来，而且按钮没反应

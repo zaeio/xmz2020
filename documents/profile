@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# /etc/profile: system-wide .profile file for the Bourne shell (sh(1))
+# and Bourne compatible shells (bash(1), ksh(1), ash(1), ...).
+
+#echo "Processing /etc/profile... "
+# no-op
+
+# Set search library path and user path
+LD_LIBRARY_PATH=/lib:/usr/lib
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export LD_LIBRARY_PATH PATH
+
+#host name
+USER="`id -un`"
+LOGNAME=$USER
+HOSTNAME='/bin/hostname'
+export USER LOGNAME HOSTNAME
+
+#alias
+alias ll="ls -al"
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# prompt Set PS1
+#export PS1="\\e[05;32m[$USER@\\w\\a]\\$\\e[00;34m"
+export PS1='[\u@\h \w]$ '
+echo "welcome to file system"
+
+export T_ROOT=/mnt/arm-tslib
+export LD_LIBRARY_PATH=/mnt/arm-tslib/lib:$LD_LIBRARY_PATH
+export TSLIB_CONSOLEDEVICE=none
+export TSLIB_FBDEVICE=/dev/fb0
+export TSLIB_TSDEVICE=/dev/input/event1
+export TSLIB_PLUGINDIR=$T_ROOT/lib/ts
+export TSLIB_CONFFILE=$T_ROOT/etc/ts.conf
+export POINTERCAL_FILE=/etc/pointercal
+export TSLIB_CALIBFILE=/etc/pointercal
+
+export QTEDIR=/mnt/arm-qt
+export LD_LIBRARY_PATH=/mnt/arm-qt/lib:$QTEDIR/plugins/platforms:$LD_LIBRARY_PATH
+export QT_QPA_GENERIC_PLUGINS=tslib
+export QT_QPA_FONTDIR=$QTEDIR/lib/fonts 
+export QT_QPA_PLATFORM_PLUGIN_PATH=$QTEDIR/plugins
+export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0
+# export QT_QPA_PLATFORM=linuxfb:fb=/dev/fb0:size=800x480:mmSize=800x480:offset=0x0:tty=/dev/tty
+
+#ulimit -c 1024
+echo "/tmp/core_%e_%p_%t" > /proc/sys/kernel/core_pattern

@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2020-07-07T12:50:12
+# Project created by QtCreator 2020-07-09T14:28:10
 #
 #-------------------------------------------------
 
@@ -8,13 +8,13 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = anykav500qt_test
+TARGET = arm_qt_test
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        widget.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += widget.h
 
-FORMS    += mainwindow.ui
+FORMS    += widget.ui
