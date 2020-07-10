@@ -83,4 +83,4 @@ export QT_QPA_FONTDIR=$QTEDIR/lib/fonts
 export QT_QPA_PLATFORM_PLUGIN_PATH=$QTEDIR/plugins
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0
 ```
-目前`arm_qt_test`界面需要很长时间才能加载出来，而且按钮没反应
+目前`arm_qt_test`界面需要很长时间才能加载出来，而且按钮也要很久才有反应
