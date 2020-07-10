@@ -45,7 +45,7 @@ password : anycloudv500
 >mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
 # Qt移植
-主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤（待更新）
+主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤
 ## 编译Tslib
 安装automake工具  
 
@@ -69,7 +69,7 @@ export POINTERCAL_FILE=/etc/pointercal
 export TSLIB_CALIBFILE=/etc/pointercal
 ```
 
-source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
+`source /mnt/profile`以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
 ## 编译Qt
 `autoconfigure.sh`配置和`qmake.conf`配置见documents  
@@ -83,4 +83,4 @@ export QT_QPA_FONTDIR=$QTEDIR/lib/fonts
 export QT_QPA_PLATFORM_PLUGIN_PATH=$QTEDIR/plugins
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0
 ```
-目前`arm_qt_test`界面需要很长时间才能加载出来，而且按钮也要很久才有反应
+目前`arm_qt_test`界面需要很长时间才能加载出来，而且按钮也要很久才有反应，估计是性能不够。
