@@ -8,6 +8,7 @@ Wifi card : rtl8188ftv
 
 可能的依赖
 ```
+sudo apt-get install u-boot-tools
 sudo apt-get install liblzo2-dev:i386  
 sudo apt-get install liblzma5:i386  
 sudo apt-get install liblzma-dev  
@@ -45,8 +46,58 @@ password : anycloudv500
     
     mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
-# Qt移植
-板子可能带不动qt，考虑只用tslib写界面。  
+# MiniGUI移植
+到MiniGUI官网下载`libminigui-3.2.3.tar.gz`、`mg-samples-3.2.2.tar.gz`、`minigui-res-3.2.0.tar.gz`、`zlib-1.2.8.tar.gz`、`jpegsrc.v7.tar.gz`、`libpng-1.2.37.tar.gz`6个压缩包并解压。
+## 核心库编译
+进入`libminigui-3.2.3`运行
+
+    ./configure CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc --host=arm-anykav500-linux-uclibcgnueabi --prefix=/home/bk/minigui/mg-build --build=i386-linux --target=arm-linux --disable-cursor --disable-videopcxvfb
+注意--prefix=改成自己的目录；--disable-videopcxvfb必须加上  
+然后`make`、`make install`
+
+修改etc目录下的MiniGUI.cfg配置文件，首先我们要修改指定我们使用的图像引擎为fbcon然后将其分辨率信息设置我们板子对应的分辨率如下：
+```
+# GAL engine and default options
+gal_engine=fbcon
+defaultmode=800x480-16bpp
+```
+第二个需要配置的为输入引擎IAL这里我们使用tslib作为我们的输入引擎即如下：
+```
+# IAL engine
+ial_engine=tslib
+mdev=/dev/input/event0
+mtype=IMPS2
+```
+还有要修改的地方就是配置正确的资源文件路径，如光标图片资源等，如下：
+```
+[cursorinfo]
+#Edit following line to specify cursor files path
+cursorpath=/share/minigui/res/cursor/
+
+[resinfo]
+respath=/share/minigui/res/
+```
+## 资源文件编译
+进入`minigui-res-3.2.0`运行  
+
+    ./configure --prefix=/home/bk/minigui/mg-build/
+    make
+    make install
+## 依赖库编译
+zlib库，注意不要加--prefix
+
+    ./configure
+    make
+    make install
+jpeg和png库
+
+    ./configure --prefix=/home/bk/minigui/tpl-build CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc --host=arm-anykav500-linux-uclibcgnueabi --build=i386-linux --build=i386-linux --enable-shared --enable-static
+    make
+    make install
+
+
+# ~~Qt移植~~
+板子可能带不动qt，以下可以忽略。  
 主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤。  
 ## 编译Tslib
 安装automake工具  
@@ -74,8 +125,7 @@ export TSLIB_CALIBFILE=/etc/pointercal
 source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
 ## 编译Qt
-`autoconfigure.sh`配置和`qmake.conf`配置见documents  
-make install后将`arm-qt`复制到nfs共享目录  
+`autoconfigure.sh`配置和`qmake.conf`配置见documents。make install后将`arm-qt`复制到nfs共享目录  
 在`profile`后面添加
 ```
 export QTEDIR=/mnt/arm-qt
