@@ -32,14 +32,9 @@ void button_draw(struct ts_button *button)
 {
 	int s = (button->flags & BUTTON_ACTIVE) ? 3 : 0;
 
-	rect(button->x, button->y, button->x + button->w,
-	     button->y + button->h, button_palette[s]);
-	fillrect(button->x + 1, button->y + 1,
-		 button->x + button->w - 2,
-		 button->y + button->h - 2, button_palette[s + 1]);
-	put_string_center(button->x + button->w / 2,
-			  button->y + button->h / 2,
-			  button->text, button_palette[s + 2]);
+	rect(button->x, button->y, button->x + button->w, button->y + button->h, button_palette[s]);
+	fillrect(button->x + 1, button->y + 1, button->x + button->w - 2, button->y + button->h - 2, button_palette[s + 1]);
+	put_string_center(button->x + button->w / 2, button->y + button->h / 2, button->text, button_palette[s + 2]);
 }
 
 int button_handle(struct ts_button *button, int x, int y, unsigned int p)

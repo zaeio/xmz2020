@@ -182,12 +182,12 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__hello_ts_world_SOURCES_DIST = hello_ts_world.c testutils.c \
 	testutils.h fbutils.h font_8x8.c font_8x16.c font.h \
-	fbutils-bsd.c fbutils-linux.c
+	font_24x24.c font_24x24.h fbutils-bsd.c fbutils-linux.c
 #am__objects_1 = fbutils-bsd.$(OBJEXT)
 am__objects_2 = fbutils-linux.$(OBJEXT)
 am_hello_ts_world_OBJECTS = hello_ts_world.$(OBJEXT) \
 	testutils.$(OBJEXT) font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) \
-	$(am__objects_1) $(am__objects_2)
+	font_24x24.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 hello_ts_world_OBJECTS = $(am_hello_ts_world_OBJECTS)
 am__DEPENDENCIES_1 =
 hello_ts_world_DEPENDENCIES = $(top_builddir)/src/libts.la \
@@ -198,14 +198,16 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 am__ts_calibrate_SOURCES_DIST = ts_calibrate.c ts_calibrate.h \
 	ts_calibrate_common.c fbutils.h testutils.c testutils.h \
-	font_8x8.c font_8x16.c font.h fbutils-bsd.c fbutils-linux.c \
-	ts_calibrate_sdl.c sdlutils.c sdlutils.h
+	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	fbutils-bsd.c fbutils-linux.c ts_calibrate_sdl.c sdlutils.c \
+	sdlutils.h
 #am__objects_3 = fbutils-bsd.$(OBJEXT)
 am__objects_4 = fbutils-linux.$(OBJEXT)
 am_ts_calibrate_OBJECTS = ts_calibrate.$(OBJEXT) \
 	ts_calibrate_common.$(OBJEXT) testutils.$(OBJEXT) \
 	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) \
-	$(am__objects_3) $(am__objects_4)
+	font_24x24.$(OBJEXT) $(am__objects_3) \
+	$(am__objects_4)
 #am_ts_calibrate_OBJECTS = ts_calibrate_sdl.$(OBJEXT) \
 #	ts_calibrate_common.$(OBJEXT) sdlutils.$(OBJEXT) \
 #	$(am__objects_3) $(am__objects_4)
@@ -223,11 +225,11 @@ ts_finddev_OBJECTS = $(am_ts_finddev_OBJECTS)
 ts_finddev_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_harvest_SOURCES_DIST = ts_harvest.c fbutils.h testutils.c \
-	testutils.h font_8x8.c font_8x16.c font.h fbutils-bsd.c \
-	fbutils-linux.c
+	testutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
+	font_24x24.h fbutils-bsd.c fbutils-linux.c
 am_ts_harvest_OBJECTS = ts_harvest.$(OBJEXT) testutils.$(OBJEXT) \
-	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+	$(am__objects_1) $(am__objects_2)
 ts_harvest_OBJECTS = $(am_ts_harvest_OBJECTS)
 ts_harvest_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
@@ -244,20 +246,22 @@ ts_print_raw_OBJECTS = $(am_ts_print_raw_OBJECTS)
 ts_print_raw_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_test_SOURCES_DIST = ts_test.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h fbutils-bsd.c fbutils-linux.c
+	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	fbutils-bsd.c fbutils-linux.c
 am_ts_test_OBJECTS = ts_test.$(OBJEXT) testutils.$(OBJEXT) \
-	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+	$(am__objects_1) $(am__objects_2)
 ts_test_OBJECTS = $(am_ts_test_OBJECTS)
 ts_test_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_test_mt_SOURCES_DIST = ts_test_mt.c testutils.c testutils.h \
-	fbutils.h font_8x8.c font_8x16.c font.h fbutils-bsd.c \
-	fbutils-linux.c ts_test_mt_sdl.c sdlutils.c sdlutils.h
+	fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
+	font_24x24.h fbutils-bsd.c fbutils-linux.c ts_test_mt_sdl.c \
+	sdlutils.c sdlutils.h
 am_ts_test_mt_OBJECTS = ts_test_mt.$(OBJEXT) \
 	testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
-	font_8x16.$(OBJEXT) $(am__objects_3) \
-	$(am__objects_4)
+	font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+	$(am__objects_3) $(am__objects_4)
 #am_ts_test_mt_OBJECTS = ts_test_mt_sdl.$(OBJEXT) \
 #	sdlutils.$(OBJEXT) $(am__objects_3) $(am__objects_4)
 ts_test_mt_OBJECTS = $(am_ts_test_mt_OBJECTS)
@@ -479,15 +483,17 @@ EXTRA_DIST = CMakeLists.txt
 AM_CFLAGS = -DTS_POINTERCAL=\"${sysconfdir}/pointercal\" $(DEBUGFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/src
 hello_ts_world_SOURCES = hello_ts_world.c testutils.c testutils.h \
-	fbutils.h font_8x8.c font_8x16.c font.h $(am__append_1) \
-	$(am__append_2)
+	fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
+	font_24x24.h $(am__append_1) $(am__append_2)
 hello_ts_world_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 ts_test_SOURCES = ts_test.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h $(am__append_3) $(am__append_4)
+	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	$(am__append_3) $(am__append_4)
 ts_test_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 ts_test_mt_SOURCES = ts_test_mt.c testutils.c testutils.h \
 	fbutils.h font_8x8.c font_8x16.c font.h \
-	$(am__append_5) $(am__append_6)
+	font_24x24.c font_24x24.h $(am__append_5) \
+	$(am__append_6)
 #ts_test_mt_SOURCES = ts_test_mt_sdl.c sdlutils.c sdlutils.h \
 #	$(am__append_5) $(am__append_6)
 ts_test_mt_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
@@ -503,14 +509,16 @@ ts_print_raw_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 ts_calibrate_SOURCES = ts_calibrate.c ts_calibrate.h \
 	ts_calibrate_common.c fbutils.h testutils.c \
 	testutils.h font_8x8.c font_8x16.c font.h \
-	$(am__append_7) $(am__append_8)
+	font_24x24.c font_24x24.h $(am__append_7) \
+	$(am__append_8)
 #ts_calibrate_SOURCES = ts_calibrate_sdl.c ts_calibrate.h \
 #	ts_calibrate_common.c sdlutils.c sdlutils.h \
 #	$(am__append_7) $(am__append_8)
 ts_calibrate_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 #ts_calibrate_LDADD = $(top_builddir)/src/libts.la -lSDL2 $(LIBEVDEV_LIBS)
 ts_harvest_SOURCES = ts_harvest.c fbutils.h testutils.c testutils.h \
-	font_8x8.c font_8x16.c font.h $(am__append_9) $(am__append_10)
+	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	$(am__append_9) $(am__append_10)
 ts_harvest_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 ts_finddev_SOURCES = ts_finddev.c
 ts_finddev_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
@@ -651,6 +659,7 @@ distclean-compile:
 
 #include ./$(DEPDIR)/fbutils-bsd.Po
 #include ./$(DEPDIR)/fbutils-linux.Po
+#include ./$(DEPDIR)/font_24x24.Po
 #include ./$(DEPDIR)/font_8x16.Po
 #include ./$(DEPDIR)/font_8x8.Po
 #include ./$(DEPDIR)/hello_ts_world.Po

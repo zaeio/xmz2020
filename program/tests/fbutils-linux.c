@@ -27,6 +27,7 @@
 #include <linux/fb.h>
 
 #include "font.h"
+#include "font_24x24.h"
 #include "fbutils.h"
 
 union multiptr {
@@ -69,18 +70,21 @@ int open_framebuffer(void)
 	if ((consoledevice = getenv("TSLIB_CONSOLEDEVICE")) == NULL)
 		consoledevice = defaultconsoledevice;
 
-	if (strcmp(consoledevice, "none") != 0) {
+	if (strcmp(consoledevice, "none") != 0)
+	{
 		if (strlen(consoledevice) >= VTNAME_LEN)
 			return -1;
 
 		sprintf(vtname, "%s%d", consoledevice, 1);
 		fd = open(vtname, O_WRONLY);
-		if (fd < 0) {
+		if (fd < 0)
+		{
 			perror("open consoledevice");
 			return -1;
 		}
 
-		if (ioctl(fd, VT_OPENQRY, &nr) < 0) {
+		if (ioctl(fd, VT_OPENQRY, &nr) < 0)
+		{
 			close(fd);
 			perror("ioctl VT_OPENQRY");
 			return -1;
@@ -90,7 +94,8 @@ int open_framebuffer(void)
 		sprintf(vtname, "%s%d", consoledevice, nr);
 
 		con_fd = open(vtname, O_RDWR | O_NDELAY);
-		if (con_fd < 0) {
+		if (con_fd < 0)
+		{
 			perror("open tty");
 			return -1;
 		}
@@ -98,41 +103,46 @@ int open_framebuffer(void)
 		if (ioctl(con_fd, VT_GETSTATE, &vts) == 0)
 			last_vt = vts.v_active;
 
-		if (ioctl(con_fd, VT_ACTIVATE, nr) < 0) {
+		if (ioctl(con_fd, VT_ACTIVATE, nr) < 0)
+		{
 			perror("VT_ACTIVATE");
 			close(con_fd);
 			return -1;
 		}
 
 #ifndef TSLIB_NO_VT_WAITACTIVE
-		if (ioctl(con_fd, VT_WAITACTIVE, nr) < 0) {
+		if (ioctl(con_fd, VT_WAITACTIVE, nr) < 0)
+		{
 			perror("VT_WAITACTIVE");
 			close(con_fd);
 			return -1;
 		}
 #endif
 
-		if (ioctl(con_fd, KDSETMODE, KD_GRAPHICS) < 0) {
+		if (ioctl(con_fd, KDSETMODE, KD_GRAPHICS) < 0)
+		{
 			perror("KDSETMODE");
 			close(con_fd);
 			return -1;
 		}
-
 	}
 
 	fb_fd = open(fbdevice, O_RDWR);
-	if (fb_fd == -1) {
+	if (fb_fd == -1)
+	{
 		perror("open fbdevice");
 		return -1;
 	}
 
-	if (ioctl(fb_fd, FBIOGET_FSCREENINFO, &fix) < 0) {
+	if (ioctl(fb_fd, FBIOGET_FSCREENINFO, &fix) < 0)
+	{
 		perror("ioctl FBIOGET_FSCREENINFO");
 		close(fb_fd);
 		return -1;
 	}
 
-	if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &var) < 0) {
+	if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &var) < 0)
+	{
 		perror("ioctl FBIOGET_VSCREENINFO");
 		close(fb_fd);
 		return -1;
@@ -141,24 +151,28 @@ int open_framebuffer(void)
 	xres_orig = var.xres;
 	yres_orig = var.yres;
 
-	if (rotation & 1) {
+	if (rotation & 1)
+	{
 		/* 1 or 3 */
 		y = var.yres;
 		yres = var.xres;
 		xres = y;
-	} else {
+	}
+	else
+	{
 		/* 0 or 2 */
 		xres = var.xres;
 		yres = var.yres;
 	}
 
 	fbuffer = mmap(NULL,
-		       fix.smem_len,
-		       PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED,
-		       fb_fd,
-		       0);
+				   fix.smem_len,
+				   PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED,
+				   fb_fd,
+				   0);
 
-	if (fbuffer == (unsigned char *)-1) {
+	if (fbuffer == (unsigned char *)-1)
+	{
 		perror("mmap framebuffer");
 		close(fb_fd);
 		return -1;
@@ -166,8 +180,7 @@ int open_framebuffer(void)
 	memset(fbuffer, 0, fix.smem_len);
 
 	bytes_per_pixel = (var.bits_per_pixel + 7) / 8;
-	transp_mask = ((1 << var.transp.length) - 1) <<
-		var.transp.offset; /* transp.length unlikely > 32 */
+	transp_mask = ((1 << var.transp.length) - 1) << var.transp.offset; /* transp.length unlikely > 32 */
 	line_addr = malloc(sizeof(*line_addr) * var.yres_virtual);
 	addr = 0;
 	for (y = 0; y < var.yres_virtual; y++, addr += fix.line_length)
@@ -182,7 +195,8 @@ void close_framebuffer(void)
 	munmap(fbuffer, fix.smem_len);
 	close(fb_fd);
 
-	if (strcmp(consoledevice, "none") != 0) {
+	if (strcmp(consoledevice, "none") != 0)
+	{
 		if (ioctl(con_fd, KDSETMODE, KD_TEXT) < 0)
 			perror("KDSETMODE");
 
@@ -207,7 +221,8 @@ void put_cross(int32_t x, int32_t y, uint32_t colidx)
 	line(x, y - 10, x, y - 2, colidx);
 	line(x, y + 2, x, y + 10, colidx);
 
-	if (!alternative_cross) {
+	if (!alternative_cross)
+	{
 		line(x - 6, y - 9, x - 9, y - 9, colidx + 1);
 		line(x - 9, y - 8, x - 9, y - 6, colidx + 1);
 		line(x - 9, y + 6, x - 9, y + 9, colidx + 1);
@@ -216,7 +231,9 @@ void put_cross(int32_t x, int32_t y, uint32_t colidx)
 		line(x + 9, y + 8, x + 9, y + 6, colidx + 1);
 		line(x + 9, y - 6, x + 9, y - 9, colidx + 1);
 		line(x + 8, y - 9, x + 6, y - 9, colidx + 1);
-	} else if (alternative_cross == 1) {
+	}
+	else if (alternative_cross == 1)
+	{
 		line(x - 7, y - 7, x - 4, y - 4, colidx + 1);
 		line(x - 7, y + 7, x - 4, y + 4, colidx + 1);
 		line(x + 4, y - 4, x + 7, y - 7, colidx + 1);
@@ -224,11 +241,86 @@ void put_cross(int32_t x, int32_t y, uint32_t colidx)
 	}
 }
 
+//绘制24x24的字符
+void put_char_24x24(int x, int y, int c_ascii, int colidx)
+{
+	int font_index;
+	font_index = c_ascii - '0'; //先判断是数字，大写字母还是小写字母
+	if (font_index < 10)		//数字
+	{
+		font_index += font_vga_24x24.offset_num;
+	}
+	else if (font_index >= 17 && font_index <= 42) //大写
+	{
+		font_index = c_ascii - 'A' + font_vga_24x24.offset_capital;
+	}
+	else if (font_index >= 49) //小写
+	{
+		font_index = c_ascii - 'a' + font_vga_24x24.offset_lower;
+	}
+	//打印
+	int row, i, bit;
+	unsigned char bits;
+	for (row = 0; row < font_vga_24x24.height; row++) //24行
+	{
+		for (i = 0; i < font_vga_24x24.bytes_per_line; i++) //每行3个字节
+		{
+			bits = fontdata_24x24[font_index][row * 3 + i]; //读取一个字节
+
+			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
+			{
+				if (bits & 0x80)
+				{
+					pixel(x + bit + i * 8, y + row, colidx);
+				}
+			}
+		}
+	}
+}
+
+//绘制64x64的字符
+void put_char_64x64(int x, int y, int c_ascii, int colidx)
+{
+	int font_index;
+	font_index = c_ascii - '0'; //先判断是数字，大写字母还是小写字母
+	if (font_index < 10)		//数字
+	{
+		font_index += font_vga_64x64.offset_num;
+	}
+	else if (font_index >= 17 && font_index <= 42) //大写
+	{
+		font_index = c_ascii - 'A' + font_vga_64x64.offset_capital;
+	}
+	else if (font_index >= 49) //小写
+	{
+		font_index = c_ascii - 'a' + font_vga_64x64.offset_lower;
+	}
+	//打印
+	int row, i, bit;
+	unsigned char bits;
+	for (row = 0; row < font_vga_64x64.height; row++) //24行
+	{
+		for (i = 0; i < font_vga_64x64.bytes_per_line; i++) //每行3个字节
+		{
+			bits = fontdata_64x64[font_index][row *  font_vga_64x64.bytes_per_line + i]; //读取一个字节
+
+			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
+			{
+				if (bits & 0x80)
+				{
+					pixel(x + bit + i * 8, y + row, colidx);
+				}
+			}
+		}
+	}
+}
+
 static void put_char(int32_t x, int32_t y, int32_t c, int32_t colidx)
 {
 	int32_t i, j, bits;
 
-	for (i = 0; i < font_vga_8x8.height; i++) {
+	for (i = 0; i < font_vga_8x8.height; i++)
+	{
 		bits = font_vga_8x8.data[font_vga_8x8.height * c + i];
 		for (j = 0; j < font_vga_8x8.width; j++, bits <<= 1)
 			if (bits & 0x80)
@@ -240,16 +332,15 @@ void put_string(int32_t x, int32_t y, char *s, uint32_t colidx)
 {
 	int32_t i;
 
-	for (i = 0; *s; i++, x += font_vga_8x8.width, s++)
-		put_char (x, y, *s, colidx);
+	for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
+		put_char_64x64(x, y, *s, colidx);
 }
 
 void put_string_center(int32_t x, int32_t y, char *s, uint32_t colidx)
 {
 	size_t sl = strlen(s);
 
-	put_string(x - (sl / 2) * font_vga_8x8.width,
-		   y - font_vga_8x8.height / 2, s, colidx);
+	put_string(x - (sl / 2) * font_vga_64x64.width, y - font_vga_64x64.height / 2, s, colidx);
 }
 
 void setcolor(uint32_t colidx, uint32_t value)
@@ -258,15 +349,17 @@ void setcolor(uint32_t colidx, uint32_t value)
 	uint16_t red, green, blue;
 	struct fb_cmap cmap;
 
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 #ifdef DEBUG
 		fprintf(stderr, "WARNING: color index = %u, must be <256\n",
-			colidx);
+				colidx);
 #endif
 		return;
 	}
 
-	switch (bytes_per_pixel) {
+	switch (bytes_per_pixel)
+	{
 	default:
 	case 1:
 		res = colidx;
@@ -290,15 +383,16 @@ void setcolor(uint32_t colidx, uint32_t value)
 		green = (value >> 8) & 0xff;
 		blue = value & 0xff;
 		res = ((red >> (8 - var.red.length)) << var.red.offset) |
-		      ((green >> (8 - var.green.length)) << var.green.offset) |
-		      ((blue >> (8 - var.blue.length)) << var.blue.offset);
+			  ((green >> (8 - var.green.length)) << var.green.offset) |
+			  ((blue >> (8 - var.blue.length)) << var.blue.offset);
 	}
 	colormap[colidx] = res;
 }
 
 static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
 {
-	switch (rotation) {
+	switch (rotation)
+	{
 	case 0:
 	default:
 		loc->p8 = line_addr[y] + x * bytes_per_pixel;
@@ -317,7 +411,8 @@ static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
 
 static inline void __setpixel(union multiptr loc, uint32_t xormode, uint32_t color)
 {
-	switch (bytes_per_pixel) {
+	switch (bytes_per_pixel)
+	{
 	case 1:
 	default:
 		if (xormode)
@@ -334,11 +429,14 @@ static inline void __setpixel(union multiptr loc, uint32_t xormode, uint32_t col
 		*loc.p16 |= transp_mask;
 		break;
 	case 3:
-		if (xormode) {
+		if (xormode)
+		{
 			*loc.p8++ ^= (color >> 16) & 0xff;
 			*loc.p8++ ^= (color >> 8) & 0xff;
 			*loc.p8 ^= color & 0xff;
-		} else {
+		}
+		else
+		{
 			*loc.p8++ = (color >> 16) & 0xff;
 			*loc.p8++ = (color >> 8) & 0xff;
 			*loc.p8 = color & 0xff;
@@ -361,16 +459,17 @@ void pixel(int32_t x, int32_t y, uint32_t colidx)
 	union multiptr loc;
 
 	if ((x < 0) || ((uint32_t)x >= xres) ||
-	    (y < 0) || ((uint32_t)y >= yres))
+		(y < 0) || ((uint32_t)y >= yres))
 		return;
 
 	xormode = colidx & XORMODE;
 	colidx &= ~XORMODE;
 
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 #ifdef DEBUG
 		fprintf(stderr, "WARNING: color value = %u, must be <256\n",
-			colidx);
+				colidx);
 #endif
 		return;
 	}
@@ -385,29 +484,46 @@ void line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
 	int32_t dx = x2 - x1;
 	int32_t dy = y2 - y1;
 
-	if (abs(dx) < abs(dy)) {
-		if (y1 > y2) {
-			tmp = x1; x1 = x2; x2 = tmp;
-			tmp = y1; y1 = y2; y2 = tmp;
-			dx = -dx; dy = -dy;
+	if (abs(dx) < abs(dy))
+	{
+		if (y1 > y2)
+		{
+			tmp = x1;
+			x1 = x2;
+			x2 = tmp;
+			tmp = y1;
+			y1 = y2;
+			y2 = tmp;
+			dx = -dx;
+			dy = -dy;
 		}
 		x1 <<= 16;
 		/* dy is apriori >0 */
 		dx = (dx << 16) / dy;
-		while (y1 <= y2) {
+		while (y1 <= y2)
+		{
 			pixel(x1 >> 16, y1, colidx);
 			x1 += dx;
 			y1++;
 		}
-	} else {
-		if (x1 > x2) {
-			tmp = x1; x1 = x2; x2 = tmp;
-			tmp = y1; y1 = y2; y2 = tmp;
-			dx = -dx; dy = -dy;
+	}
+	else
+	{
+		if (x1 > x2)
+		{
+			tmp = x1;
+			x1 = x2;
+			x2 = tmp;
+			tmp = y1;
+			y1 = y2;
+			y2 = tmp;
+			dx = -dx;
+			dy = -dy;
 		}
 		y1 <<= 16;
 		dy = dx ? (dy << 16) / dx : 0;
-		while (x1 <= x2) {
+		while (x1 <= x2)
+		{
 			pixel(x1, y1 >> 16, colidx);
 			y1 += dy;
 			x1++;
@@ -418,9 +534,9 @@ void line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
 void rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
 {
 	line(x1, y1, x2, y1, colidx);
-	line(x2, y1+1, x2, y2-1, colidx);
+	line(x2, y1 + 1, x2, y2 - 1, colidx);
 	line(x2, y2, x1, y2, colidx);
-	line(x1, y2-1, x1, y1+1, colidx);
+	line(x1, y2 - 1, x1, y1 + 1, colidx);
 }
 
 void fillrect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
@@ -430,8 +546,18 @@ void fillrect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
 	union multiptr loc;
 
 	/* Clipping and sanity checking */
-	if (x1 > x2) { tmp = x1; x1 = x2; x2 = tmp; }
-	if (y1 > y2) { tmp = y1; y1 = y2; y2 = tmp; }
+	if (x1 > x2)
+	{
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+	}
+	if (y1 > y2)
+	{
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
 
 	if (x1 < 0)
 		x1 = 0;
@@ -459,18 +585,21 @@ void fillrect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t colidx)
 	xormode = colidx & XORMODE;
 	colidx &= ~XORMODE;
 
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 #ifdef DEBUG
 		fprintf(stderr, "WARNING: color value = %u, must be <256\n",
-			colidx);
+				colidx);
 #endif
 		return;
 	}
 
 	colidx = colormap[colidx];
 
-	for (; y1 <= y2; y1++) {
-		for (tmp = x1; tmp <= x2; tmp++) {
+	for (; y1 <= y2; y1++)
+	{
+		for (tmp = x1; tmp <= x2; tmp++)
+		{
 			__pixel_loc(tmp, y1, &loc);
 			__setpixel(loc, xormode, colidx);
 			loc.p8 += bytes_per_pixel;

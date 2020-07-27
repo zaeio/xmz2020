@@ -28,11 +28,10 @@
 5填充色(激活)，6字体颜色(激活)
 */
 static int palette[] = {
-	0x000000,  0xFFFFFF,  0x0D0D0D, 
-	0x0D0D0D, 0x92FCFF, 
-	0x3D3D3D, 0x92FCFF
-};
-#define NR_COLORS (sizeof (palette) / sizeof (palette [0]))
+	0x000000, 0xFFFFFF, 0x0D0D0D,
+	0x0D0D0D, 0x92FCFF,
+	0x3D3D3D, 0x92FCFF};
+#define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
 
 #define NR_BUTTONS 3
 static struct ts_button buttons[NR_BUTTONS];
@@ -51,7 +50,7 @@ static void refresh_screen(void)
 	int i;
 
 	fillrect(0, 0, xres - 1, yres - 1, 0); //背景
-	put_string_center(xres / 2, yres / 4, "Hello Tslib!", 4);
+	put_string_center(xres / 2, yres / 4, "239", 4);
 
 	for (i = 0; i < NR_BUTTONS; i++)
 		button_draw(&buttons[i]);
@@ -90,11 +89,12 @@ int main(int argc, char **argv)
 	signal(SIGINT, sig);
 	signal(SIGTERM, sig);
 
-	while (1) {
+	while (1)
+	{
 		const struct option long_options[] = {
-			{ "help",         no_argument,       NULL, 'h' },
-			{ "rotate",       required_argument, NULL, 'r' },
-			{ "version",      no_argument,       NULL, 'v' },
+			{"help", no_argument, NULL, 'h'},
+			{"rotate", required_argument, NULL, 'r'},
+			{"version", no_argument, NULL, 'v'},
 		};
 
 		int option_index = 0;
@@ -104,7 +104,8 @@ int main(int argc, char **argv)
 		if (c == -1)
 			break;
 
-		switch (c) {
+		switch (c)
+		{
 		case 'h':
 			help();
 			return 0;
@@ -116,7 +117,8 @@ int main(int argc, char **argv)
 		case 'r':
 			/* extern in fbutils.h */
 			rotation = atoi(optarg);
-			if (rotation < 0 || rotation > 3) {
+			if (rotation < 0 || rotation > 3)
+			{
 				help();
 				return 0;
 			}
@@ -127,7 +129,8 @@ int main(int argc, char **argv)
 			return 0;
 		}
 
-		if (errno) {
+		if (errno)
+		{
 			char str[9];
 
 			sprintf(str, "option ?");
@@ -137,12 +140,14 @@ int main(int argc, char **argv)
 	}
 
 	ts = ts_setup(NULL, 0);
-	if (!ts) {
+	if (!ts)
+	{
 		perror("ts_open");
 		exit(1);
 	}
 
-	if (open_framebuffer()) {
+	if (open_framebuffer())
+	{
 		close_framebuffer();
 		ts_close(ts);
 		exit(1);
@@ -162,13 +167,14 @@ int main(int argc, char **argv)
 	buttons[1].x = (3 * xres) / 8;
 	buttons[2].x = (3 * xres) / 4;
 	buttons[0].y = buttons[1].y = buttons[2].y = 10;
-	buttons[0].text = "Drag";
-	buttons[1].text = "Draw";
-	buttons[2].text = "Quit";
+	buttons[0].text = "0123";
+	buttons[1].text = "456";
+	buttons[2].text = "789";
 
 	refresh_screen();
 
-	while (1) {
+	while (1)
+	{
 		struct ts_sample samp;
 		int ret;
 
@@ -183,7 +189,8 @@ int main(int argc, char **argv)
 		if ((mode & 15) != 1)
 			put_cross(x, y, 4 | XORMODE);
 
-		if (ret < 0) {
+		if (ret < 0)
+		{
 			perror("ts_read");
 			close_framebuffer();
 			ts_close(ts);
@@ -195,7 +202,8 @@ int main(int argc, char **argv)
 
 		for (i = 0; i < NR_BUTTONS; i++)
 			if (button_handle(&buttons[i], samp.x, samp.y, samp.pressure))
-				switch (i) {
+				switch (i)
+				{
 				case 0:
 					mode = 0;
 					refresh_screen();
@@ -210,13 +218,15 @@ int main(int argc, char **argv)
 
 		//printf("%ld.%06ld: %6d %6d %6d\n", samp.tv.tv_sec, samp.tv.tv_usec, samp.x, samp.y, samp.pressure);
 
-		if (samp.pressure > 0) {
+		if (samp.pressure > 0)
+		{
 			if (mode == 0x80000001)
 				line(x, y, samp.x, samp.y, 2);
 			x = samp.x;
 			y = samp.y;
 			mode |= 0x80000000;
-		} else
+		}
+		else
 			mode &= ~0x80000000;
 		if (quit_pressed)
 			break;

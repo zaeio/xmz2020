@@ -61,28 +61,33 @@ int open_framebuffer(void)
 		fbdevice = defaultfbdevice;
 
 	fb_fd = open(fbdevice, O_RDWR);
-	if (fb_fd == -1) {
+	if (fb_fd == -1)
+	{
 		perror("open fbdevice");
 		return -1;
 	}
 
-
-	if (ioctl(fb_fd, FBIOGTYPE, &fb) != 0) {
+	if (ioctl(fb_fd, FBIOGTYPE, &fb) != 0)
+	{
 		perror("ioctl(FBIOGTYPE)");
 		return -1;
 	}
 
-	if (ioctl(fb_fd, FBIO_GETLINEWIDTH, &line_length) != 0) {
+	if (ioctl(fb_fd, FBIO_GETLINEWIDTH, &line_length) != 0)
+	{
 		perror("ioctl(FBIO_GETLINEWIDTH)");
 		return -1;
 	}
 
-	if (rotation & 1) {
+	if (rotation & 1)
+	{
 		/* 1 or 3 */
 		y = fb.fb_height;
 		yres = fb.fb_width;
 		xres = y;
-	} else {
+	}
+	else
+	{
 		/* 0 or 2 */
 		xres = fb.fb_width;
 		yres = fb.fb_height;
@@ -90,10 +95,11 @@ int open_framebuffer(void)
 
 	int pagemask = getpagesize() - 1;
 
-	fbsize = ((int) line_length*yres + pagemask) & ~pagemask;
+	fbsize = ((int)line_length * yres + pagemask) & ~pagemask;
 
 	fbuffer = (unsigned char *)mmap(0, fbsize, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, 0);
-	if (fbuffer == (unsigned char *)-1) {
+	if (fbuffer == (unsigned char *)-1)
+	{
 		perror("mmap framebuffer");
 		close(fb_fd);
 		return -1;
@@ -126,7 +132,8 @@ void put_cross(int x, int y, unsigned colidx)
 	line(x, y - 10, x, y - 2, colidx);
 	line(x, y + 2, x, y + 10, colidx);
 
-	if (!alternative_cross) {
+	if (!alternative_cross)
+	{
 		line(x - 6, y - 9, x - 9, y - 9, colidx + 1);
 		line(x - 9, y - 8, x - 9, y - 6, colidx + 1);
 		line(x - 9, y + 6, x - 9, y + 9, colidx + 1);
@@ -135,7 +142,9 @@ void put_cross(int x, int y, unsigned colidx)
 		line(x + 9, y + 8, x + 9, y + 6, colidx + 1);
 		line(x + 9, y - 6, x + 9, y - 9, colidx + 1);
 		line(x + 8, y - 9, x + 6, y - 9, colidx + 1);
-	} else if (alternative_cross == 1) {
+	}
+	else if (alternative_cross == 1)
+	{
 		line(x - 7, y - 7, x - 4, y - 4, colidx + 1);
 		line(x - 7, y + 7, x - 4, y + 4, colidx + 1);
 		line(x + 4, y - 4, x + 7, y - 7, colidx + 1);
@@ -147,7 +156,8 @@ void put_char(int x, int y, int c, int colidx)
 {
 	int i, j, bits;
 
-	for (i = 0; i < font_vga_8x8.height; i++) {
+	for (i = 0; i < font_vga_8x8.height; i++)
+	{
 		bits = font_vga_8x8.data[font_vga_8x8.height * c + i];
 		for (j = 0; j < font_vga_8x8.width; j++, bits <<= 1)
 			if (bits & 0x80)
@@ -160,15 +170,14 @@ void put_string(int x, int y, char *s, unsigned colidx)
 	int i;
 
 	for (i = 0; *s; i++, x += font_vga_8x8.width, s++)
-		put_char (x, y, *s, colidx);
+		put_char(x, y, *s, colidx);
 }
 
 void put_string_center(int x, int y, char *s, unsigned colidx)
 {
 	size_t sl = strlen(s);
 
-	put_string(x - (sl / 2) * font_vga_8x8.width,
-		   y - font_vga_8x8.height / 2, s, colidx);
+	put_string(x - (sl / 2) * font_vga_8x8.width, y - font_vga_8x8.height / 2, s, colidx);
 }
 
 //设置可用颜色保存在colormap中，和调色板palette[]一起使用
@@ -178,9 +187,10 @@ void setcolor(unsigned colidx, unsigned value)
 	unsigned char red, green, blue;
 
 #ifdef DEBUG
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 		fprintf(stderr, "WARNING: color index = %u, must be <256\n",
-			colidx);
+				colidx);
 		return;
 	}
 #endif
@@ -189,7 +199,8 @@ void setcolor(unsigned colidx, unsigned value)
 	green = (value >> 8) & 0xff;
 	blue = value & 0xff;
 
-	switch (bytes_per_pixel) {
+	switch (bytes_per_pixel)
+	{
 	case 1:
 		res = value;
 		break;
@@ -200,14 +211,14 @@ void setcolor(unsigned colidx, unsigned value)
 	case 4:
 	default:
 		res = value;
-
 	}
 	colormap[colidx] = res;
 }
 
 static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
 {
-	switch (rotation) {
+	switch (rotation)
+	{
 	case 0:
 	default:
 		loc->p8 = line_addr[y] + x * bytes_per_pixel;
@@ -225,9 +236,10 @@ static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
 }
 
 static inline void __setpixel(union multiptr loc, unsigned int xormode,
-			      unsigned int color)
+							  unsigned int color)
 {
-	switch (bytes_per_pixel) {
+	switch (bytes_per_pixel)
+	{
 	case 1:
 	default:
 		if (xormode)
@@ -242,11 +254,14 @@ static inline void __setpixel(union multiptr loc, unsigned int xormode,
 			*loc.p16 = color;
 		break;
 	case 3:
-		if (xormode) {
+		if (xormode)
+		{
 			*loc.p8++ ^= (color >> 16) & 0xff;
 			*loc.p8++ ^= (color >> 8) & 0xff;
 			*loc.p8 ^= color & 0xff;
-		} else {
+		}
+		else
+		{
 			*loc.p8++ = (color >> 16) & 0xff;
 			*loc.p8++ = (color >> 8) & 0xff;
 			*loc.p8 = color & 0xff;
@@ -267,16 +282,17 @@ void pixel(int x, int y, unsigned int colidx)
 	union multiptr loc;
 
 	if ((x < 0) || ((uint32_t)x >= xres) ||
-	    (y < 0) || ((uint32_t)y >= yres))
+		(y < 0) || ((uint32_t)y >= yres))
 		return;
 
 	xormode = colidx & XORMODE;
 	colidx &= ~XORMODE;
 
 #ifdef DEBUG
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 		fprintf(stderr, "WARNING: color value = %u, must be <256\n",
-			 colidx);
+				colidx);
 		return;
 	}
 #endif
@@ -291,29 +307,46 @@ void line(int x1, int y1, int x2, int y2, unsigned int colidx)
 	int dx = x2 - x1;
 	int dy = y2 - y1;
 
-	if (abs(dx) < abs(dy)) {
-		if (y1 > y2) {
-			tmp = x1; x1 = x2; x2 = tmp;
-			tmp = y1; y1 = y2; y2 = tmp;
-			dx = -dx; dy = -dy;
+	if (abs(dx) < abs(dy))
+	{
+		if (y1 > y2)
+		{
+			tmp = x1;
+			x1 = x2;
+			x2 = tmp;
+			tmp = y1;
+			y1 = y2;
+			y2 = tmp;
+			dx = -dx;
+			dy = -dy;
 		}
 		x1 <<= 16;
 		/* dy is apriori >0 */
 		dx = (dx << 16) / dy;
-		while (y1 <= y2) {
+		while (y1 <= y2)
+		{
 			pixel(x1 >> 16, y1, colidx);
 			x1 += dx;
 			y1++;
 		}
-	} else {
-		if (x1 > x2) {
-			tmp = x1; x1 = x2; x2 = tmp;
-			tmp = y1; y1 = y2; y2 = tmp;
-			dx = -dx; dy = -dy;
+	}
+	else
+	{
+		if (x1 > x2)
+		{
+			tmp = x1;
+			x1 = x2;
+			x2 = tmp;
+			tmp = y1;
+			y1 = y2;
+			y2 = tmp;
+			dx = -dx;
+			dy = -dy;
 		}
 		y1 <<= 16;
 		dy = dx ? (dy << 16) / dx : 0;
-		while (x1 <= x2) {
+		while (x1 <= x2)
+		{
 			pixel(x1, y1 >> 16, colidx);
 			y1 += dy;
 			x1++;
@@ -324,9 +357,9 @@ void line(int x1, int y1, int x2, int y2, unsigned int colidx)
 void rect(int x1, int y1, int x2, int y2, unsigned int colidx)
 {
 	line(x1, y1, x2, y1, colidx);
-	line(x2, y1+1, x2, y2-1, colidx);
+	line(x2, y1 + 1, x2, y2 - 1, colidx);
 	line(x2, y2, x1, y2, colidx);
-	line(x1, y2-1, x1, y1+1, colidx);
+	line(x1, y2 - 1, x1, y1 + 1, colidx);
 }
 
 void fillrect(int x1, int y1, int x2, int y2, unsigned int colidx)
@@ -336,12 +369,34 @@ void fillrect(int x1, int y1, int x2, int y2, unsigned int colidx)
 	union multiptr loc;
 
 	/* Clipping and sanity checking */
-	if (x1 > x2) { tmp = x1; x1 = x2; x2 = tmp; }
-	if (y1 > y2) { tmp = y1; y1 = y2; y2 = tmp; }
-	if (x1 < 0) x1 = 0; if ((uint32_t)x1 >= xres) x1 = xres - 1;
-	if (x2 < 0) x2 = 0; if ((uint32_t)x2 >= xres) x2 = xres - 1;
-	if (y1 < 0) y1 = 0; if ((uint32_t)y1 >= yres) y1 = yres - 1;
-	if (y2 < 0) y2 = 0; if ((uint32_t)y2 >= yres) y2 = yres - 1;
+	if (x1 > x2)
+	{
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+	}
+	if (y1 > y2)
+	{
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+	if (x1 < 0)
+		x1 = 0;
+	if ((uint32_t)x1 >= xres)
+		x1 = xres - 1;
+	if (x2 < 0)
+		x2 = 0;
+	if ((uint32_t)x2 >= xres)
+		x2 = xres - 1;
+	if (y1 < 0)
+		y1 = 0;
+	if ((uint32_t)y1 >= yres)
+		y1 = yres - 1;
+	if (y2 < 0)
+		y2 = 0;
+	if ((uint32_t)y2 >= yres)
+		y2 = yres - 1;
 
 	if ((x1 > x2) || (y1 > y2))
 		return;
@@ -350,17 +405,20 @@ void fillrect(int x1, int y1, int x2, int y2, unsigned int colidx)
 	colidx &= ~XORMODE;
 
 #ifdef DEBUG
-	if (colidx > 255) {
+	if (colidx > 255)
+	{
 		fprintf(stderr, "WARNING: color value = %u, must be <256\n",
-			 colidx);
+				colidx);
 		return;
 	}
 #endif
 
 	colidx = colormap[colidx];
 
-	for (; y1 <= y2; y1++) {
-		for (tmp = x1; tmp <= x2; tmp++) {
+	for (; y1 <= y2; y1++)
+	{
+		for (tmp = x1; tmp <= x2; tmp++)
+		{
 			__pixel_loc(tmp, y1, &loc);
 			__setpixel(loc, xormode, colidx);
 			loc.p8 += bytes_per_pixel;

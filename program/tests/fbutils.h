@@ -38,4 +38,5 @@ void line(int x1, int y1, int x2, int y2, unsigned colidx);
 void rect(int x1, int y1, int x2, int y2, unsigned colidx);
 void fillrect(int x1, int y1, int x2, int y2, unsigned colidx);
 
+void put_char_24x24(int x, int y, int c_ascii, int colidx);
 #endif /* _FBUTILS_H */

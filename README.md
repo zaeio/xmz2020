@@ -44,7 +44,38 @@ password : anycloudv500
     
     mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
-## MiniGUI移植
+## Tslib移植
+主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤。   
+安装automake工具  
+
+    sudo apt-get install autoconf automake libtool  pkg-config
+
+编译
+
+    ./autogen-clean.sh
+    ./autogen.sh
+    ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/nfs-share/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
+    make; make install;
+
+make install后将`arm-tslib`复制到nfs共享目录  
+在nfs目录中新建`profile`文件，然后`source /mnt/profile`，这样就不用每次修改根文件然后烧录。  
+```
+export T_ROOT=/mnt/arm-tslib
+export LD_LIBRARY_PATH=/mnt/arm-tslib/lib:$LD_LIBRARY_PATH
+export TSLIB_CONSOLEDEVICE=none
+export TSLIB_FBDEVICE=/dev/fb0
+export TSLIB_TSDEVICE=/dev/input/event1
+export TSLIB_PLUGINDIR=$T_ROOT/lib/ts
+export TSLIB_CONFFILE=$T_ROOT/etc/ts.conf
+export POINTERCAL_FILE=/etc/pointercal
+export TSLIB_CALIBFILE=/etc/pointercal
+```
+
+source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
+
+编写的程序为`tests/hello_ts_world.c`将`tests`复制到tslib中覆盖并重新编译，会生成可执行文件`hello_ts_world`。添加新的.c文件需要修改`Makefile.am`和`CMakeLists.txt`相应部分。
+
+## ~~MiniGUI移植~~
 到MiniGUI官网下载`libminigui-4.0.7.tar.gz`、`mg-samples-4.0.1.tar.gz`、`minigui-res-4.0.0.tar.gz`、`zlib-1.2.9.tar.gz`、`jpegsrc.v7.tar.gz`、`libpng-1.2.37.tar.gz`6个压缩包并解压。注意zlib下载1.2.9版本否则会导致系统炸裂。
 ### 核心库编译
 先下载harfbuzz-master，将src中的.h复制到`/libminigui-4.0.7/include`中  
@@ -116,33 +147,6 @@ png库
 
     ./configure CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc --host=arm-anykav500-linux-uclibcgnueabi --prefix=/home/bk/minigui/mg-build --build=i386-linux --target=arm-linux CPPFLAGS=-I/home/bk/minigui/mg-build/include
 
-## Tslib移植
-主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤。   
-安装automake工具  
-
-    sudo apt-get install autoconf automake libtool  pkg-config
-
-指定编译工具及输出路径
-
-    ./configure --host=arm-anykav500-linux-uclibcgnueabi --cache-file=tmp.cache --prefix=/home/bk/nfs-share/arm-tslib CC=/opt/arm-anykav500-linux-uclibcgnueabi/usr/bin/arm-anykav500-linux-uclibcgnueabi-gcc
-
-make install后将`arm-tslib`复制到nfs共享目录  
-在nfs目录中新建`profile`文件，然后`source /mnt/profile`，这样就不用每次修改根文件然后烧录。  
-```
-export T_ROOT=/mnt/arm-tslib
-export LD_LIBRARY_PATH=/mnt/arm-tslib/lib:$LD_LIBRARY_PATH
-export TSLIB_CONSOLEDEVICE=none
-export TSLIB_FBDEVICE=/dev/fb0
-export TSLIB_TSDEVICE=/dev/input/event1
-export TSLIB_PLUGINDIR=$T_ROOT/lib/ts
-export TSLIB_CONFFILE=$T_ROOT/etc/ts.conf
-export POINTERCAL_FILE=/etc/pointercal
-export TSLIB_CALIBFILE=/etc/pointercal
-```
-
-source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
-
-编写的程序为`tests/hello_ts_world.c`将`tests`复制到tslib中覆盖并重新编译，会生成可执行文件`hello_ts_world`。添加新的.c文件需要修改`Makefile.am`和`CMakeLists.txt`相应部分。
 ## ~~Qt移植~~
 板子可能带不动qt，以下可以忽略。  
 `autoconfigure.sh`配置和`qmake.conf`配置见documents。make install后将`arm-qt`复制到nfs共享目录  
