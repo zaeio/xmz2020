@@ -38,19 +38,20 @@ if(${with-sdl})
 	set(ts_test_mt_SOURCES ts_test_mt_sdl.c sdlutils.c)
 	set(ts_calibrate_SOURCES ts_calibrate_sdl.c ts_calibrate_common.c sdlutils.c)
 else()
-	set(ts_test_mt_SOURCES ts_test_mt.c testutils.c font_8x8.c font_8x16.c font_24x24.c${fbutils})
-	set(ts_calibrate_SOURCES ts_calibrate.c ts_calibrate_common.c testutils.c font_8x8.c font_8x16.c font_24x24.c${fbutils})
+	set(ts_test_mt_SOURCES ts_test_mt.c testutils.c font_8x8.c font_8x16.c font_big.c${fbutils})
+	set(ts_calibrate_SOURCES ts_calibrate.c ts_calibrate_common.c testutils.c font_8x8.c font_8x16.c font_big.c${fbutils})
 endif()
 
 set(ts_conf_SOURCES ts_conf.c)
 set(ts_test_SOURCES ts_test.c testutils.c font_8x8.c font_8x16.c ${fbutils})
-set(hello_ts_world_SOURCES hello_ts_world.c testutils.c font_8x8.c font_8x16.c font_24x24.c${fbutils})
+set(hello_ts_world_SOURCES hello_ts_world.c testutils.c font_8x8.c font_8x16.c font_big.c${fbutils})
+set(GUI_SOURCES GUI.c testutils.c font_8x8.c font_8x16.c font_big.c${fbutils})
 set(ts_print_SOURCES  ts_print.c)
 set(ts_print_mt_SOURCES ts_print_mt.c)
 set(ts_verify_SOURCES ts_verify.c)
 set(ts_print_raw_SOURCES ts_print_raw.c)
 set(ts_finddev_SOURCES ts_finddev.c)
-set(ts_harvest_SOURCES ts_harvest.c testutils.c font_8x8.c font_8x16.c font_24x24.c${fbutils})
+set(ts_harvest_SOURCES ts_harvest.c testutils.c font_8x8.c font_8x16.c font_big.c${fbutils})
 
 
 ## ADD TESTS
@@ -77,6 +78,7 @@ TSLIB_ADD_TEST_ON_PLATFORMS(ts_test_mt   UNIX ${WIN32_WITH_SDL})
 TSLIB_ADD_TEST_ON_PLATFORMS(ts_calibrate UNIX ${WIN32_WITH_SDL})
 TSLIB_ADD_TEST_ON_PLATFORMS(ts_test   	 ${UNIX_WITHOUT_SDL})
 TSLIB_ADD_TEST_ON_PLATFORMS(hello_ts_world   	 ${UNIX_WITHOUT_SDL})
+TSLIB_ADD_TEST_ON_PLATFORMS(GUI   	 ${UNIX_WITHOUT_SDL})
 TSLIB_ADD_TEST_ON_PLATFORMS(ts_verify    ${LINUX})
 
 install(TARGETS ${tslib_tests}

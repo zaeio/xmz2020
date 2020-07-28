@@ -177,7 +177,7 @@ void put_string_center(int x, int y, char *s, unsigned colidx)
 {
 	size_t sl = strlen(s);
 
-	put_string(x - (sl / 2) * font_vga_8x8.width, y - font_vga_8x8.height / 2, s, colidx);
+	put_string(x - (sl / 2) * font_vga_24x24.width, y - font_vga_24x24.height / 2, s, colidx);
 }
 
 //设置可用颜色保存在colormap中，和调色板palette[]一起使用

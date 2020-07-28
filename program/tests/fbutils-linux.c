@@ -27,7 +27,7 @@
 #include <linux/fb.h>
 
 #include "font.h"
-#include "font_24x24.h"
+#include "font_big.h"
 #include "fbutils.h"
 
 union multiptr {
@@ -279,21 +279,29 @@ void put_char_24x24(int x, int y, int c_ascii, int colidx)
 }
 
 //绘制64x64的字符
-void put_char_64x64(int x, int y, int c_ascii, int colidx)
+void put_char_64x64(int x, int y, char c_ascii, int colidx)
 {
 	int font_index;
-	font_index = c_ascii - '0'; //先判断是数字，大写字母还是小写字母
-	if (font_index < 10)		//数字
+	font_index = c_ascii - '0';			  //先判断是数字，大写字母还是小写字母
+	if (c_ascii >= '0' && c_ascii <= '9') //数字
 	{
-		font_index += font_vga_64x64.offset_num;
+		font_index = c_ascii - '0' + font_vga_64x64.offset_num;
 	}
-	else if (font_index >= 17 && font_index <= 42) //大写
+	else if (c_ascii >= 'A' && c_ascii <= 'Z') //大写
 	{
 		font_index = c_ascii - 'A' + font_vga_64x64.offset_capital;
 	}
-	else if (font_index >= 49) //小写
+	else if (c_ascii >= 'a' && c_ascii <= 'z') //小写
 	{
 		font_index = c_ascii - 'a' + font_vga_64x64.offset_lower;
+	}
+	else if (c_ascii == '#')
+	{
+		font_index = font_vga_64x64.index_hash;
+	}
+	else if (c_ascii == '*')
+	{
+		font_index = font_vga_64x64.index_star;
 	}
 	//打印
 	int row, i, bit;
@@ -302,7 +310,7 @@ void put_char_64x64(int x, int y, int c_ascii, int colidx)
 	{
 		for (i = 0; i < font_vga_64x64.bytes_per_line; i++) //每行3个字节
 		{
-			bits = fontdata_64x64[font_index][row *  font_vga_64x64.bytes_per_line + i]; //读取一个字节
+			bits = fontdata_64x64[font_index][row * font_vga_64x64.bytes_per_line + i]; //读取一个字节
 
 			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
 			{
@@ -340,7 +348,7 @@ void put_string_center(int32_t x, int32_t y, char *s, uint32_t colidx)
 {
 	size_t sl = strlen(s);
 
-	put_string(x - (sl / 2) * font_vga_64x64.width, y - font_vga_64x64.height / 2, s, colidx);
+	put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, colidx);
 }
 
 void setcolor(uint32_t colidx, uint32_t value)

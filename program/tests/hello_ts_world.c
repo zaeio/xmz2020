@@ -1,16 +1,3 @@
-/*
- *  tslib/src/ts_test.c
- *
- *  Copyright (C) 2001 Russell King.
- *
- * This file is placed under the GPL.  Please see the file
- * COPYING for more details.
- *
- * SPDX-License-Identifier: GPL-2.0+
- *
- *
- * Basic test program for touchscreen library.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -118,7 +118,8 @@ host_triplet = @host@
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	ts_harvest$(EXEEXT) \
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	ts_finddev$(EXEEXT) \
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	ts_verify$(EXEEXT) \
-@FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	hello_ts_world$(EXEEXT)
+@FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	hello_ts_world$(EXEEXT) \
+@FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_FALSE@	GUI$(EXEEXT)
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_TRUE@bin_PROGRAMS = ts_test_mt$(EXEEXT) \
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_TRUE@	ts_calibrate$(EXEEXT) \
 @FREEBSD_FALSE@@HAIKU_FALSE@@HURD_FALSE@@LINUX_TRUE@@SDL_TRUE@	ts_print$(EXEEXT) \
@@ -155,12 +156,14 @@ host_triplet = @host@
 @FREEBSD_FALSE@am__append_2 = fbutils-linux.c
 @FREEBSD_TRUE@am__append_3 = fbutils-bsd.c
 @FREEBSD_FALSE@am__append_4 = fbutils-linux.c
-@FREEBSD_TRUE@@SDL_FALSE@am__append_5 = fbutils-bsd.c
-@FREEBSD_FALSE@@SDL_FALSE@am__append_6 = fbutils-linux.c
+@FREEBSD_TRUE@am__append_5 = fbutils-bsd.c
+@FREEBSD_FALSE@am__append_6 = fbutils-linux.c
 @FREEBSD_TRUE@@SDL_FALSE@am__append_7 = fbutils-bsd.c
 @FREEBSD_FALSE@@SDL_FALSE@am__append_8 = fbutils-linux.c
-@FREEBSD_TRUE@am__append_9 = fbutils-bsd.c
-@FREEBSD_FALSE@am__append_10 = fbutils-linux.c
+@FREEBSD_TRUE@@SDL_FALSE@am__append_9 = fbutils-bsd.c
+@FREEBSD_FALSE@@SDL_FALSE@am__append_10 = fbutils-linux.c
+@FREEBSD_TRUE@am__append_11 = fbutils-bsd.c
+@FREEBSD_FALSE@am__append_12 = fbutils-linux.c
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/internal/libtool.m4 \
@@ -180,25 +183,33 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am__hello_ts_world_SOURCES_DIST = hello_ts_world.c testutils.c \
-	testutils.h fbutils.h font_8x8.c font_8x16.c font.h \
-	font_24x24.c font_24x24.h fbutils-bsd.c fbutils-linux.c
+am__GUI_SOURCES_DIST = GUI.c testutils.c testutils.h fbutils.h \
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
+	fbutils-bsd.c fbutils-linux.c
 @FREEBSD_TRUE@am__objects_1 = fbutils-bsd.$(OBJEXT)
 @FREEBSD_FALSE@am__objects_2 = fbutils-linux.$(OBJEXT)
-am_hello_ts_world_OBJECTS = hello_ts_world.$(OBJEXT) \
-	testutils.$(OBJEXT) font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) \
-	font_24x24.$(OBJEXT) $(am__objects_1) $(am__objects_2)
-hello_ts_world_OBJECTS = $(am_hello_ts_world_OBJECTS)
+am_GUI_OBJECTS = GUI.$(OBJEXT) testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
+	font_8x16.$(OBJEXT) font_big.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
+GUI_OBJECTS = $(am_GUI_OBJECTS)
 am__DEPENDENCIES_1 =
-hello_ts_world_DEPENDENCIES = $(top_builddir)/src/libts.la \
-	$(am__DEPENDENCIES_1)
+GUI_DEPENDENCIES = $(top_builddir)/src/libts.la $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am__hello_ts_world_SOURCES_DIST = hello_ts_world.c testutils.c \
+	testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c \
+	font_big.h fbutils-bsd.c fbutils-linux.c
+am_hello_ts_world_OBJECTS = hello_ts_world.$(OBJEXT) \
+	testutils.$(OBJEXT) font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) \
+	font_big.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+hello_ts_world_OBJECTS = $(am_hello_ts_world_OBJECTS)
+hello_ts_world_DEPENDENCIES = $(top_builddir)/src/libts.la \
+	$(am__DEPENDENCIES_1)
 am__ts_calibrate_SOURCES_DIST = ts_calibrate.c ts_calibrate.h \
 	ts_calibrate_common.c fbutils.h testutils.c testutils.h \
-	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
 	fbutils-bsd.c fbutils-linux.c ts_calibrate_sdl.c sdlutils.c \
 	sdlutils.h
 @FREEBSD_TRUE@@SDL_FALSE@am__objects_3 = fbutils-bsd.$(OBJEXT)
@@ -206,7 +217,7 @@ am__ts_calibrate_SOURCES_DIST = ts_calibrate.c ts_calibrate.h \
 @SDL_FALSE@am_ts_calibrate_OBJECTS = ts_calibrate.$(OBJEXT) \
 @SDL_FALSE@	ts_calibrate_common.$(OBJEXT) testutils.$(OBJEXT) \
 @SDL_FALSE@	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) \
-@SDL_FALSE@	font_24x24.$(OBJEXT) $(am__objects_3) \
+@SDL_FALSE@	font_big.$(OBJEXT) $(am__objects_3) \
 @SDL_FALSE@	$(am__objects_4)
 @SDL_TRUE@am_ts_calibrate_OBJECTS = ts_calibrate_sdl.$(OBJEXT) \
 @SDL_TRUE@	ts_calibrate_common.$(OBJEXT) sdlutils.$(OBJEXT) \
@@ -225,10 +236,10 @@ ts_finddev_OBJECTS = $(am_ts_finddev_OBJECTS)
 ts_finddev_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_harvest_SOURCES_DIST = ts_harvest.c fbutils.h testutils.c \
-	testutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
-	font_24x24.h fbutils-bsd.c fbutils-linux.c
+	testutils.h font_8x8.c font_8x16.c font.h font_big.c \
+	font_big.h fbutils-bsd.c fbutils-linux.c
 am_ts_harvest_OBJECTS = ts_harvest.$(OBJEXT) testutils.$(OBJEXT) \
-	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_big.$(OBJEXT) \
 	$(am__objects_1) $(am__objects_2)
 ts_harvest_OBJECTS = $(am_ts_harvest_OBJECTS)
 ts_harvest_DEPENDENCIES = $(top_builddir)/src/libts.la \
@@ -246,21 +257,21 @@ ts_print_raw_OBJECTS = $(am_ts_print_raw_OBJECTS)
 ts_print_raw_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_test_SOURCES_DIST = ts_test.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
 	fbutils-bsd.c fbutils-linux.c
 am_ts_test_OBJECTS = ts_test.$(OBJEXT) testutils.$(OBJEXT) \
-	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+	font_8x8.$(OBJEXT) font_8x16.$(OBJEXT) font_big.$(OBJEXT) \
 	$(am__objects_1) $(am__objects_2)
 ts_test_OBJECTS = $(am_ts_test_OBJECTS)
 ts_test_DEPENDENCIES = $(top_builddir)/src/libts.la \
 	$(am__DEPENDENCIES_1)
 am__ts_test_mt_SOURCES_DIST = ts_test_mt.c testutils.c testutils.h \
-	fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
-	font_24x24.h fbutils-bsd.c fbutils-linux.c ts_test_mt_sdl.c \
-	sdlutils.c sdlutils.h
+	fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h \
+	fbutils-bsd.c fbutils-linux.c ts_test_mt_sdl.c sdlutils.c \
+	sdlutils.h
 @SDL_FALSE@am_ts_test_mt_OBJECTS = ts_test_mt.$(OBJEXT) \
 @SDL_FALSE@	testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
-@SDL_FALSE@	font_8x16.$(OBJEXT) font_24x24.$(OBJEXT) \
+@SDL_FALSE@	font_8x16.$(OBJEXT) font_big.$(OBJEXT) \
 @SDL_FALSE@	$(am__objects_3) $(am__objects_4)
 @SDL_TRUE@am_ts_test_mt_OBJECTS = ts_test_mt_sdl.$(OBJEXT) \
 @SDL_TRUE@	sdlutils.$(OBJEXT) $(am__objects_3) $(am__objects_4)
@@ -307,12 +318,14 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(hello_ts_world_SOURCES) $(ts_calibrate_SOURCES) \
-	$(ts_conf_SOURCES) $(ts_finddev_SOURCES) $(ts_harvest_SOURCES) \
+SOURCES = $(GUI_SOURCES) $(hello_ts_world_SOURCES) \
+	$(ts_calibrate_SOURCES) $(ts_conf_SOURCES) \
+	$(ts_finddev_SOURCES) $(ts_harvest_SOURCES) \
 	$(ts_print_SOURCES) $(ts_print_mt_SOURCES) \
 	$(ts_print_raw_SOURCES) $(ts_test_SOURCES) \
 	$(ts_test_mt_SOURCES) $(ts_verify_SOURCES)
-DIST_SOURCES = $(am__hello_ts_world_SOURCES_DIST) \
+DIST_SOURCES = $(am__GUI_SOURCES_DIST) \
+	$(am__hello_ts_world_SOURCES_DIST) \
 	$(am__ts_calibrate_SOURCES_DIST) $(ts_conf_SOURCES) \
 	$(ts_finddev_SOURCES) $(am__ts_harvest_SOURCES_DIST) \
 	$(ts_print_SOURCES) $(ts_print_mt_SOURCES) \
@@ -482,20 +495,26 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = CMakeLists.txt
 AM_CFLAGS = -DTS_POINTERCAL=\"@TS_POINTERCAL@\" $(DEBUGFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/src
+
+##############################################
+GUI_SOURCES = GUI.c testutils.c testutils.h fbutils.h font_8x8.c \
+	font_8x16.c font.h font_big.c font_big.h $(am__append_1) \
+	$(am__append_2)
+GUI_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 hello_ts_world_SOURCES = hello_ts_world.c testutils.c testutils.h \
-	fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c \
-	font_24x24.h $(am__append_1) $(am__append_2)
-hello_ts_world_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
-ts_test_SOURCES = ts_test.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
+	fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h \
 	$(am__append_3) $(am__append_4)
+hello_ts_world_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
+##############################################
+ts_test_SOURCES = ts_test.c testutils.c testutils.h fbutils.h \
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
+	$(am__append_5) $(am__append_6)
 ts_test_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 @SDL_FALSE@ts_test_mt_SOURCES = ts_test_mt.c testutils.c testutils.h \
-@SDL_FALSE@	fbutils.h font_8x8.c font_8x16.c font.h \
-@SDL_FALSE@	font_24x24.c font_24x24.h $(am__append_5) \
-@SDL_FALSE@	$(am__append_6)
+@SDL_FALSE@	fbutils.h font_8x8.c font_8x16.c font.h font_big.c \
+@SDL_FALSE@	font_big.h $(am__append_7) $(am__append_8)
 @SDL_TRUE@ts_test_mt_SOURCES = ts_test_mt_sdl.c sdlutils.c sdlutils.h \
-@SDL_TRUE@	$(am__append_5) $(am__append_6)
+@SDL_TRUE@	$(am__append_7) $(am__append_8)
 @SDL_FALSE@ts_test_mt_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 @SDL_TRUE@ts_test_mt_LDADD = $(top_builddir)/src/libts.la -lSDL2 $(LIBEVDEV_LIBS)
 ts_print_SOURCES = ts_print.c
@@ -509,16 +528,16 @@ ts_print_raw_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 @SDL_FALSE@ts_calibrate_SOURCES = ts_calibrate.c ts_calibrate.h \
 @SDL_FALSE@	ts_calibrate_common.c fbutils.h testutils.c \
 @SDL_FALSE@	testutils.h font_8x8.c font_8x16.c font.h \
-@SDL_FALSE@	font_24x24.c font_24x24.h $(am__append_7) \
-@SDL_FALSE@	$(am__append_8)
+@SDL_FALSE@	font_big.c font_big.h $(am__append_9) \
+@SDL_FALSE@	$(am__append_10)
 @SDL_TRUE@ts_calibrate_SOURCES = ts_calibrate_sdl.c ts_calibrate.h \
 @SDL_TRUE@	ts_calibrate_common.c sdlutils.c sdlutils.h \
-@SDL_TRUE@	$(am__append_7) $(am__append_8)
+@SDL_TRUE@	$(am__append_9) $(am__append_10)
 @SDL_FALSE@ts_calibrate_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 @SDL_TRUE@ts_calibrate_LDADD = $(top_builddir)/src/libts.la -lSDL2 $(LIBEVDEV_LIBS)
 ts_harvest_SOURCES = ts_harvest.c fbutils.h testutils.c testutils.h \
-	font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h \
-	$(am__append_9) $(am__append_10)
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
+	$(am__append_11) $(am__append_12)
 ts_harvest_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 ts_finddev_SOURCES = ts_finddev.c
 ts_finddev_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
@@ -607,6 +626,10 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+GUI$(EXEEXT): $(GUI_OBJECTS) $(GUI_DEPENDENCIES) $(EXTRA_GUI_DEPENDENCIES) 
+	@rm -f GUI$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(GUI_OBJECTS) $(GUI_LDADD) $(LIBS)
+
 hello_ts_world$(EXEEXT): $(hello_ts_world_OBJECTS) $(hello_ts_world_DEPENDENCIES) $(EXTRA_hello_ts_world_DEPENDENCIES) 
 	@rm -f hello_ts_world$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hello_ts_world_OBJECTS) $(hello_ts_world_LDADD) $(LIBS)
@@ -657,11 +680,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GUI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fbutils-bsd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fbutils-linux.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_24x24.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_8x16.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_8x8.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_big.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hello_ts_world.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdlutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testutils.Po@am__quote@

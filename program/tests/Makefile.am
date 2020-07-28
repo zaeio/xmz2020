@@ -29,7 +29,7 @@ if LINUX
 if SDL
 bin_PROGRAMS		= ts_test_mt ts_calibrate ts_print ts_conf ts_print_mt ts_print_raw ts_finddev ts_verify
 else
-bin_PROGRAMS		= ts_test ts_test_mt ts_calibrate ts_conf ts_print ts_print_mt ts_print_raw ts_harvest ts_finddev ts_verify hello_ts_world
+bin_PROGRAMS		= ts_test ts_test_mt ts_calibrate ts_conf ts_print ts_print_mt ts_print_raw ts_harvest ts_finddev ts_verify hello_ts_world GUI
 endif
 endif
 
@@ -45,15 +45,25 @@ if HURD
 bin_PROGRAMS		= ts_print ts_print_raw ts_finddev ts_print_mt ts_conf
 endif
 
-hello_ts_world_SOURCES	= hello_ts_world.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h
+##############################################
+GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
+GUI_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
+if FREEBSD
+GUI_SOURCES		+= fbutils-bsd.c
+else
+GUI_SOURCES		+= fbutils-linux.c
+endif
+
+hello_ts_world_SOURCES	= hello_ts_world.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
 hello_ts_world_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 hello_ts_world_SOURCES		+= fbutils-bsd.c
 else
 hello_ts_world_SOURCES		+= fbutils-linux.c
 endif
+##############################################
 
-ts_test_SOURCES		= ts_test.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h
+ts_test_SOURCES		= ts_test.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
 ts_test_LDADD		= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 ts_test_SOURCES		+= fbutils-bsd.c
@@ -65,7 +75,7 @@ if SDL
 ts_test_mt_SOURCES	= ts_test_mt_sdl.c sdlutils.c sdlutils.h
 ts_test_mt_LDADD	= $(top_builddir)/src/libts.la -lSDL2 $(LIBEVDEV_LIBS)
 else
-ts_test_mt_SOURCES	= ts_test_mt.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h
+ts_test_mt_SOURCES	= ts_test_mt.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
 ts_test_mt_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 ts_test_mt_SOURCES	+= fbutils-bsd.c
@@ -90,7 +100,7 @@ if SDL
 ts_calibrate_SOURCES	= ts_calibrate_sdl.c ts_calibrate.h ts_calibrate_common.c sdlutils.c sdlutils.h
 ts_calibrate_LDADD	= $(top_builddir)/src/libts.la -lSDL2 $(LIBEVDEV_LIBS)
 else
-ts_calibrate_SOURCES	= ts_calibrate.c ts_calibrate.h ts_calibrate_common.c fbutils.h testutils.c testutils.h font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h
+ts_calibrate_SOURCES	= ts_calibrate.c ts_calibrate.h ts_calibrate_common.c fbutils.h testutils.c testutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
 ts_calibrate_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 ts_calibrate_SOURCES	+= fbutils-bsd.c
@@ -99,7 +109,7 @@ ts_calibrate_SOURCES	+= fbutils-linux.c
 endif
 endif
 
-ts_harvest_SOURCES	= ts_harvest.c fbutils.h testutils.c testutils.h font_8x8.c font_8x16.c font.h font_24x24.c font_24x24.h
+ts_harvest_SOURCES	= ts_harvest.c fbutils.h testutils.c testutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
 ts_harvest_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 ts_harvest_SOURCES	+= fbutils-bsd.c

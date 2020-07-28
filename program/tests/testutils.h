@@ -21,6 +21,7 @@
 
 struct ts_button {
 	int x, y, w, h;
+	int btn_colidx[2], border_colidx[2], font_colidx[2];
 	char *text;
 	int flags;
 #define BUTTON_ACTIVE 0x00000001
