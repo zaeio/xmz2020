@@ -73,7 +73,8 @@ export TSLIB_CALIBFILE=/etc/pointercal
 
 source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运行`./mnt/arm-tslib/bin/ts_test`不知道为什么，而且触摸点左右颠倒。`ts_calibrate`由于文件系统只读暂时没效果。
 
-编写的程序为`tests/hello_ts_world.c`将`tests`复制到tslib中覆盖并重新编译，会生成可执行文件`hello_ts_world`。添加新的.c文件需要修改`Makefile.am`和`CMakeLists.txt`相应部分。
+编写的程序为`tests`文件架中的`GUI.c`、`hello_ts_world.c`、`font_big.c`  
+将`tests`复制到tslib中覆盖并重新编译，会生成可执行文件`hello_ts_world`、`GUI`。添加新的.c文件需要修改`Makefile.am`和`CMakeLists.txt`相应部分。
 
 ## ~~MiniGUI移植~~
 到MiniGUI官网下载`libminigui-4.0.7.tar.gz`、`mg-samples-4.0.1.tar.gz`、`minigui-res-4.0.0.tar.gz`、`zlib-1.2.9.tar.gz`、`jpegsrc.v7.tar.gz`、`libpng-1.2.37.tar.gz`6个压缩包并解压。注意zlib下载1.2.9版本否则会导致系统炸裂。
