@@ -21,13 +21,48 @@
 #include "fbutils.h"
 #include "testutils.h"
 
+void textbox_draw(struct ts_textbox *textbox)
+{
+	fillrect(textbox->x, textbox->y, textbox->x + textbox->w, textbox->y + textbox->h, textbox->border_colidx);					  //边框
+	fillrect(textbox->x + 2, textbox->y + 2, textbox->x + textbox->w - 2, textbox->y + textbox->h - 2, textbox->fill_colidx); //填充
+	put_string_center(textbox->x + textbox->w / 2, textbox->y + textbox->h / 2, textbox->text, textbox->font_colidx);
+}
+
+void textbox_addchar(struct ts_textbox *textbox, char c)
+{
+	int i;
+	for (i = 0; i < textbox->text_cap && textbox->text[i] != '\0'; i++)
+		;
+	if (i < textbox->text_cap)
+		textbox->text[i] = c;
+	textbox_draw(textbox);
+}
+
+void textbox_delchar(struct ts_textbox *textbox)
+{
+	int i;
+	for (i = 0; i < textbox->text_cap && textbox->text[i] != '\0'; i++)
+		;
+	if (i - 1 < textbox->text_cap)
+		textbox->text[i - 1] = '\0';
+	textbox_draw(textbox);
+}
+
+void textbox_clear(struct ts_textbox *textbox)
+{
+	int i;
+	for (i = 0; i < textbox->text_cap; textbox->text[i] = '\0', i++)
+		;
+	textbox_draw(textbox);
+}
+
 void button_draw(struct ts_button *button)
 {
 	int s = (button->flags & BUTTON_ACTIVE) ? 1 : 0; //激活时为1
 
-	fillrect(button->x, button->y, button->x + button->w, button->y + button->h, button->border_colidx[s]); //边框
-	fillrect(button->x + 2, button->y + 2, button->x + button->w - 2, button->y + button->h - 2, button->btn_colidx[s]);//填充
-	put_string_center(button->x + button->w / 2, button->y + button->h / 2, button->text, button->font_colidx[s]);//文本
+	fillrect(button->x, button->y, button->x + button->w, button->y + button->h, button->border_colidx[s]);				  //边框
+	fillrect(button->x + 2, button->y + 2, button->x + button->w - 2, button->y + button->h - 2, button->fill_colidx[s]); //填充
+	put_string_center(button->x + button->w / 2, button->y + button->h / 2, button->text, button->font_colidx[s]);		  //文本
 }
 
 int button_handle(struct ts_button *button, int x, int y, unsigned int p)
