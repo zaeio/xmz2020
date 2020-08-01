@@ -23,9 +23,9 @@
 
 void textbox_draw(struct ts_textbox *textbox)
 {
-	fillrect(textbox->x, textbox->y, textbox->x + textbox->w, textbox->y + textbox->h, textbox->border_colidx);					  //边框
+	fillrect(textbox->x, textbox->y, textbox->x + textbox->w, textbox->y + textbox->h, textbox->border_colidx);				  //边框
 	fillrect(textbox->x + 2, textbox->y + 2, textbox->x + textbox->w - 2, textbox->y + textbox->h - 2, textbox->fill_colidx); //填充
-	put_string_center(textbox->x + textbox->w / 2, textbox->y + textbox->h / 2, textbox->text, textbox->font_colidx);
+	put_string_center(textbox->x + textbox->w / 2, textbox->y + textbox->h / 2, textbox->text, 64, textbox->font_colidx);
 }
 
 void textbox_addchar(struct ts_textbox *textbox, char c)
@@ -62,7 +62,7 @@ void button_draw(struct ts_button *button)
 
 	fillrect(button->x, button->y, button->x + button->w, button->y + button->h, button->border_colidx[s]);				  //边框
 	fillrect(button->x + 2, button->y + 2, button->x + button->w - 2, button->y + button->h - 2, button->fill_colidx[s]); //填充
-	put_string_center(button->x + button->w / 2, button->y + button->h / 2, button->text, button->font_colidx[s]);		  //文本
+	put_string_center(button->x + button->w / 2, button->y + button->h / 2, button->text, 64, button->font_colidx[s]);	  //文本
 }
 
 int button_handle(struct ts_button *button, int x, int y, unsigned int p)

@@ -81,7 +81,7 @@ source以后，需要调用一下显示屏例程`ak_vo_sample`，然后才能运
 用`sensor.sh`加载驱动并复制`isp_ar0230_dvp.conf`到`/etc/jffs2/`下  
 
     sensor.sh install ar0230
-    ak_vi_sample -n 20 -f /etc/jffs2/isp_ar0230_dvp.conf
+    ak_vi_sample -n 5 -p /mnt/vi -f /etc/jffs2/isp_ar0230_dvp.conf
 
 ## ~~MiniGUI移植~~
 到MiniGUI官网下载`libminigui-4.0.7.tar.gz`、`mg-samples-4.0.1.tar.gz`、`minigui-res-4.0.0.tar.gz`、`zlib-1.2.9.tar.gz`、`jpegsrc.v7.tar.gz`、`libpng-1.2.37.tar.gz`6个压缩包并解压。注意zlib下载1.2.9版本否则会导致系统炸裂。

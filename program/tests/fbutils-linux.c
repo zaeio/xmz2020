@@ -241,77 +241,69 @@ void put_cross(int32_t x, int32_t y, uint32_t colidx)
 	}
 }
 
-//绘制24x24的字符
-void put_char_24x24(int x, int y, int c_ascii, int colidx)
+//绘制大字符
+void put_char_big(int x, int y, char c_ascii, int fontsize, int colidx)
 {
 	int font_index;
-	font_index = c_ascii - '0'; //先判断是数字，大写字母还是小写字母
-	if (font_index < 10)		//数字
-	{
-		font_index += font_vga_24x24.offset_num;
-	}
-	else if (font_index >= 17 && font_index <= 42) //大写
-	{
-		font_index = c_ascii - 'A' + font_vga_24x24.offset_capital;
-	}
-	else if (font_index >= 49) //小写
-	{
-		font_index = c_ascii - 'a' + font_vga_24x24.offset_lower;
-	}
-	//打印
-	int row, i, bit;
-	unsigned char bits;
-	for (row = 0; row < font_vga_24x24.height; row++) //24行
-	{
-		for (i = 0; i < font_vga_24x24.bytes_per_line; i++) //每行3个字节
-		{
-			bits = fontdata_24x24[font_index][row * 3 + i]; //读取一个字节
+	struct font_struct *font_info;
 
-			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
-			{
-				if (bits & 0x80)
-				{
-					pixel(x + bit + i * 8, y + row, colidx);
-				}
-			}
-		}
+	switch (fontsize)
+	{
+	case 24:
+		font_info = &font_vga_24x24;
+		break;
+	case 64:
+		font_info = &font_vga_64x64;
+		break;
+	default:
+		font_info = &font_vga_64x64;
+		break;
 	}
-}
 
-//绘制64x64的字符
-void put_char_64x64(int x, int y, char c_ascii, int colidx)
-{
-	int font_index;
 	font_index = c_ascii - '0';			  //先判断是数字，大写字母还是小写字母
 	if (c_ascii >= '0' && c_ascii <= '9') //数字
 	{
-		font_index = c_ascii - '0' + font_vga_64x64.offset_num;
+		font_index = c_ascii - '0' + font_info->offset_num;
 	}
 	else if (c_ascii >= 'A' && c_ascii <= 'Z') //大写
 	{
-		font_index = c_ascii - 'A' + font_vga_64x64.offset_capital;
+		font_index = c_ascii - 'A' + font_info->offset_capital;
 	}
 	else if (c_ascii >= 'a' && c_ascii <= 'z') //小写
 	{
-		font_index = c_ascii - 'a' + font_vga_64x64.offset_lower;
+		font_index = c_ascii - 'a' + font_info->offset_lower;
 	}
 	else if (c_ascii == '#')
 	{
-		font_index = font_vga_64x64.index_hash;
+		font_index = font_info->index_hash;
 	}
 	else if (c_ascii == '*')
 	{
-		font_index = font_vga_64x64.index_star;
+		font_index = font_info->index_star;
 	}
-	//打印
-	int row, i, bit;
-	unsigned char bits;
-	for (row = 0; row < font_vga_64x64.height; row++) //24行
-	{
-		for (i = 0; i < font_vga_64x64.bytes_per_line; i++) //每行3个字节
-		{
-			bits = fontdata_64x64[font_index][row * font_vga_64x64.bytes_per_line + i]; //读取一个字节
 
+	//printf("width = %d   height = %d   bytes_per_line = %d\n", font_info->width, font_info->height, font_info->bytes_per_line);
+
+	//打印
+	int row,
+		i, bit;
+	unsigned char bits;
+	for (row = 0; row < font_info->height; row++) //行
+	{
+		for (i = 0; i < font_info->bytes_per_line; i++) //每行的字节
+		{
+			switch (fontsize) //选取对应字模
+			{
+			case 24:
+				bits = fontdata_24x24[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
+				break;
+			case 64:
+				bits = fontdata_64x64[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
+				break;
+			default:
+				bits = fontdata_64x64[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
+				break;
+			}
 			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
 			{
 				if (bits & 0x80)
@@ -336,19 +328,45 @@ static void put_char(int32_t x, int32_t y, int32_t c, int32_t colidx)
 	}
 }
 
-void put_string(int32_t x, int32_t y, char *s, uint32_t colidx)
+void put_const_string(int32_t x, int32_t y, char **s, int strl, int fontsize, uint32_t colidx)
 {
-	int32_t i;
-
-	for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
-		put_char_64x64(x, y, *s, colidx);
 }
 
-void put_string_center(int32_t x, int32_t y, char *s, uint32_t colidx)
+void put_string(int32_t x, int32_t y, char *s, int fontsize, uint32_t colidx)
+{
+	int32_t i;
+	switch (fontsize)
+	{
+	case 24:
+		for (i = 0; *s; i++, x += font_vga_24x24.width, s++)
+			put_char_big(x, y, *s, fontsize, colidx);
+		break;
+	case 64:
+		for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
+			put_char_big(x, y, *s, fontsize, colidx);
+		break;
+	default:
+		for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
+			put_char_big(x, y, *s, fontsize, colidx);
+		break;
+	}
+}
+
+void put_string_center(int32_t x, int32_t y, char *s, int fontsize, uint32_t colidx)
 {
 	size_t sl = strlen(s);
-
-	put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, colidx);
+	switch (fontsize)
+	{
+	case 24:
+		put_string(x - sl * font_vga_24x24.width / 2, y - font_vga_24x24.height / 2, s, fontsize, colidx);
+		break;
+	case 64:
+		put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, fontsize, colidx);
+		break;
+	default:
+		put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, fontsize, colidx);
+		break;
+	}
 }
 
 void setcolor(uint32_t colidx, uint32_t value)

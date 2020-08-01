@@ -184,13 +184,13 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__GUI_SOURCES_DIST = GUI.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h font_big.c font_big.h \
-	fbutils-bsd.c fbutils-linux.c
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c \
+	video.h pthread.h fbutils-bsd.c fbutils-linux.c
 @FREEBSD_TRUE@am__objects_1 = fbutils-bsd.$(OBJEXT)
 @FREEBSD_FALSE@am__objects_2 = fbutils-linux.$(OBJEXT)
 am_GUI_OBJECTS = GUI.$(OBJEXT) testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
-	font_8x16.$(OBJEXT) font_big.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	font_8x16.$(OBJEXT) font_big.$(OBJEXT) video.$(OBJEXT) \
+	$(am__objects_1) $(am__objects_2)
 GUI_OBJECTS = $(am_GUI_OBJECTS)
 am__DEPENDENCIES_1 =
 GUI_DEPENDENCIES = $(top_builddir)/src/libts.la $(am__DEPENDENCIES_1)
@@ -498,8 +498,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 
 ##############################################
 GUI_SOURCES = GUI.c testutils.c testutils.h fbutils.h font_8x8.c \
-	font_8x16.c font.h font_big.c font_big.h $(am__append_1) \
-	$(am__append_2)
+	font_8x16.c font.h font_big.c font_big.h video.c video.h \
+	pthread.h $(am__append_1) $(am__append_2)
 GUI_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 hello_ts_world_SOURCES = hello_ts_world.c testutils.c testutils.h \
 	fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h \
@@ -702,6 +702,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ts_test_mt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ts_test_mt_sdl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ts_verify.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/video.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

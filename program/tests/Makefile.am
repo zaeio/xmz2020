@@ -46,7 +46,7 @@ bin_PROGRAMS		= ts_print ts_print_raw ts_finddev ts_print_mt ts_conf
 endif
 
 ##############################################
-GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
+GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c video.h pthread.h
 GUI_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
 if FREEBSD
 GUI_SOURCES		+= fbutils-bsd.c

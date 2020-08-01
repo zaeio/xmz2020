@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "tslib.h"
 #include "fbutils.h"
@@ -11,7 +12,6 @@
 
 // #define XRES 1024
 // #define YRES 600
-//char input_numbers[5] = {'\0', '\0', '\0', '\0', '\0'}; //输入数字缓存
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
     0xD5D5D5,            //背景色0、按钮边框色0
@@ -24,6 +24,8 @@ static int palette[] = {
 #define TEXTBOXES_NUM 1
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct ts_textbox textboxes[TEXTBOXES_NUM];
+struct timeval start;
+int PRINT_TIME_FLAG = -1;
 
 static void sig(int sig)
 {
@@ -108,25 +110,17 @@ void init_widget()
     refresh_screen();
 }
 
-static void help(void)
+void print_time()
 {
-    ts_print_ascii_logo(16);
-    print_version();
-    printf("\n");
-    printf("Usage: ts_test [-r <rotate_value>] [--version] [--help]\n");
-    printf("\n");
-    printf("-r --rotate\n");
-    printf("        <rotate_value> 0 ... no rotation; 0 degree (default)\n");
-    printf("                       1 ... clockwise orientation; 90 degrees\n");
-    printf("                       2 ... upside down orientation; 180 degrees\n");
-    printf("                       3 ... counterclockwise orientation; 270 degrees\n");
-    printf("-h --help\n");
-    printf("                       print this help test\n");
-    printf("-v --version\n");
-    printf("                       print version information only\n");
-    printf("\n");
-    printf("Example (Linux): ts_test -r $(cat /sys/class/graphics/fbcon/rotate)\n");
-    printf("\n");
+    struct timeval end;
+    static struct timeval last;
+
+    int timespend;
+
+    gettimeofday(&end, NULL);
+    if (((timespend = end.tv_sec - start.tv_sec) % 1 == 0) && last.tv_sec != end.tv_sec)
+        printf("wating time = %d\n", timespend);
+    last.tv_sec = end.tv_sec;
 }
 
 int main(int argc, char **argv)
@@ -158,10 +152,6 @@ int main(int argc, char **argv)
 
         switch (c)
         {
-        case 'h':
-            help();
-            return 0;
-
         case 'v':
             print_version();
             return 0;
@@ -171,13 +161,11 @@ int main(int argc, char **argv)
             rotation = atoi(optarg);
             if (rotation < 0 || rotation > 3)
             {
-                help();
                 return 0;
             }
             break;
 
         default:
-            help();
             return 0;
         }
 
@@ -246,7 +234,9 @@ int main(int argc, char **argv)
                 switch (i)
                 {
                 case 10: //#
-                    textbox_clear(&textboxes[0]);
+                    if (PRINT_TIME_FLAG == -1)
+                        gettimeofday(&start, NULL);
+                    PRINT_TIME_FLAG = -PRINT_TIME_FLAG;
                     break;
                 case 11: //删除
                     textbox_delchar(&textboxes[0]);
