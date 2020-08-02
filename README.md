@@ -45,6 +45,8 @@ password : anycloudv500
     mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
 
 ## Tslib移植
+#### 程序说明见[program/readme.md](https://github.com/zaeio/xmz2020/tree/master/program)  
+
 主要步骤参考`【正点原子】I.MX6U Qt移植V1.0.pdf`  ，下面是一些要修改的步骤。   
 安装automake工具  
 

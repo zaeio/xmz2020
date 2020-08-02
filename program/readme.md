@@ -2,6 +2,7 @@
 ## GUI
 `init_widget()`用于控件初始化，控件目前包含`button`和`textbox`。`textbox`目前不支持光标。  
 
+下面是大字体，定义在`font_big.c`和`font_big.h`中。目前未包含大小写字母，因此button和textbox文本、字符串显示中还不能包含字母。 
 ```
 struct font_struct
 {
@@ -12,7 +13,7 @@ struct font_struct
 unsigned char fontdata_24x24[12][72];
 unsigned char fontdata_64x64[12][512];
 ```
-这是大字体，定义在`font_big.c`和`font_big.h`中。目前未包含大小写字母，因此button和textbox文本、字符串显示中还不能包含字母。  
+下面是固定文本字符串字模，用于不可变文本和中文。显示任意字符串使用`put_string()`或`put_string_center()`；显示固定字符串使用`put_const_string()`；显示大字符使用`put_char_big()`。  
 ```
 unsigned char CS_48x48_sysname[8][288];//智能楼宇对讲系统
 unsigned char CS_48x48_input_number[6][288];//请输入门牌号
@@ -22,7 +23,6 @@ unsigned char CS_48x48_cancel[6][288];//按#号键取消
 unsigned char CS_48x48_rowng_number[5][288];//门牌号错误
 unsigned char CS_48x48_retry[3][288];//请重试
 ```
-这是固定文本字符串字模，用于不可变文本和中文。显示任意字符串使用`put_string()`或`put_string_center()`；显示固定字符串使用`put_const_string()`；显示大字符使用`put_char_big()`。  
 
 按钮事件在GUI.c中，如下
 ```
