@@ -9,9 +9,14 @@
 #include "tslib.h"
 #include "fbutils.h"
 #include "testutils.h"
+#include "font_big.h"
 
+#define STATE_WELCOME 0
+#define STATE_CALL 1
+#define STATE_NUM_ERROR 2
 // #define XRES 1024
 // #define YRES 600
+
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
     0xD5D5D5,            //背景色0、按钮边框色0
@@ -22,6 +27,8 @@ static int palette[] = {
 #define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
 #define NR_BUTTONS 12 //按钮数量
 #define TEXTBOXES_NUM 1
+
+int current_state = STATE_WELCOME;           //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
@@ -36,11 +43,39 @@ static void sig(int sig)
     exit(1);
 }
 
+void print_usage_info()
+{
+    fillrect(0, 200, xres / 7 * 4, 400, 0); //信息背景
+    switch (current_state)
+    {
+    case STATE_WELCOME:
+        put_const_string(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+        put_const_string(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+        break;
+    case STATE_CALL:
+        put_const_string(xres / 7 * 2, 250, CS_48x48_calling, 4, 48, 1);
+        put_const_string(xres / 7 * 2, 340, CS_48x48_cancel, 6, 48, 1);
+        break;
+    case STATE_NUM_ERROR:
+        put_const_string(xres / 7 * 2, 250, CS_48x48_rowng_number, 5, 48, 1);
+        put_const_string(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
+        break;
+
+    default:
+        put_const_string(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+        put_const_string(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+        break;
+    }
+}
+
 static void refresh_screen(void)
 {
     int i;
 
     fillrect(0, 0, xres - 1, yres - 1, 0); //背景
+    put_const_string(xres / 7 * 2, 60, CS_48x48_sysname, 8, 48, 1);
+    print_usage_info();
+
     for (i = 0; i < TEXTBOXES_NUM; i++)
         textbox_draw(&textboxes[0]);
 
@@ -234,12 +269,31 @@ int main(int argc, char **argv)
                 switch (i)
                 {
                 case 10: //#
-                    if (PRINT_TIME_FLAG == -1)
-                        gettimeofday(&start, NULL);
-                    PRINT_TIME_FLAG = -PRINT_TIME_FLAG;
-                    break;
+                {
+                    if (current_state == STATE_WELCOME)
+                    {
+                        int floor, num;
+                        floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
+                        num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
+                        if (floor > 0 && floor <= 10 && num > 0 && num <= 4)
+                            current_state = STATE_CALL;
+                        else
+                            current_state = STATE_NUM_ERROR;
+                    }
+                    else if (current_state == STATE_CALL)
+                    {
+                        current_state = STATE_WELCOME;
+                    }
+                    print_usage_info();
+                }
+                break;
                 case 11: //删除
                     textbox_delchar(&textboxes[0]);
+                    if (current_state == STATE_NUM_ERROR)
+                    {
+                        current_state = STATE_WELCOME;
+                        print_usage_info();
+                    }
                     break;
                 default:
                     textbox_addchar(&textboxes[0], '0' + i);

@@ -23,7 +23,7 @@
 
 void textbox_draw(struct ts_textbox *textbox)
 {
-	fillrect(textbox->x, textbox->y, textbox->x + textbox->w, textbox->y + textbox->h, textbox->border_colidx);				  //边框
+	//fillrect(textbox->x, textbox->y, textbox->x + textbox->w, textbox->y + textbox->h, textbox->border_colidx);				  //边框
 	fillrect(textbox->x + 2, textbox->y + 2, textbox->x + textbox->w - 2, textbox->y + textbox->h - 2, textbox->fill_colidx); //填充
 	put_string_center(textbox->x + textbox->w / 2, textbox->y + textbox->h / 2, textbox->text, 64, textbox->font_colidx);
 }

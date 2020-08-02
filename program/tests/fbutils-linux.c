@@ -246,17 +246,21 @@ void put_char_big(int x, int y, char c_ascii, int fontsize, int colidx)
 {
 	int font_index;
 	struct font_struct *font_info;
+	unsigned char *font_data;
 
 	switch (fontsize)
 	{
 	case 24:
 		font_info = &font_vga_24x24;
+		font_data = &fontdata_24x24;
 		break;
 	case 64:
 		font_info = &font_vga_64x64;
+		font_data = &fontdata_64x64;
 		break;
 	default:
 		font_info = &font_vga_64x64;
+		font_data = &fontdata_64x64;
 		break;
 	}
 
@@ -285,26 +289,14 @@ void put_char_big(int x, int y, char c_ascii, int fontsize, int colidx)
 	//printf("width = %d   height = %d   bytes_per_line = %d\n", font_info->width, font_info->height, font_info->bytes_per_line);
 
 	//打印
-	int row,
-		i, bit;
+	int row, i, bit;
 	unsigned char bits;
 	for (row = 0; row < font_info->height; row++) //行
 	{
 		for (i = 0; i < font_info->bytes_per_line; i++) //每行的字节
 		{
-			switch (fontsize) //选取对应字模
-			{
-			case 24:
-				bits = fontdata_24x24[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
-				break;
-			case 64:
-				bits = fontdata_64x64[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
-				break;
-			default:
-				bits = fontdata_64x64[font_index][row * font_info->bytes_per_line + i]; //读取一个字节
-				break;
-			}
-			for (bit = 0; bit < 8; bit++, bits <<= 1) //每个字节8bit
+			bits = font_data[font_index * font_info->bytes_per_line * fontsize + row * font_info->bytes_per_line + i]; //读取一个字节，二维数组转一维读取
+			for (bit = 0; bit < 8; bit++, bits <<= 1)																   //每个字节8bit
 			{
 				if (bits & 0x80)
 				{
@@ -328,45 +320,45 @@ static void put_char(int32_t x, int32_t y, int32_t c, int32_t colidx)
 	}
 }
 
-void put_const_string(int32_t x, int32_t y, char **s, int strl, int fontsize, uint32_t colidx)
+//中心点坐标、字符串字模、字符串长度、字体大小、颜色索引
+void put_const_string(int x_c, int y_c, char *s, int strl, int fontsize, uint32_t colidx)
 {
+	int i, bytei, row, bit, x, y;
+	int bpl = fontsize / 8; //bytes per line
+	unsigned char bits;
+
+	x = x_c - strl * fontsize / 2;
+	y = y_c - fontsize / 2;
+	for (i = 0; i < strl; i++) //strl个字符
+	{
+		for (row = 0; row < fontsize; row++) //行
+		{
+			for (bytei = 0; bytei < bpl; bytei++) //每行的字节
+			{
+				bits = s[(i * bpl * fontsize) + row * bpl + bytei]; //读取一个字节，这里二维数组转一维读取
+				for (bit = 0; bit < 8; bit++, bits <<= 1)			//每个字节8bit
+				{
+					if (bits & 0x80)
+					{
+						pixel(x + bit + bytei * 8 + i * fontsize, y + row, colidx);
+					}
+				}
+			}
+		}
+	}
 }
 
 void put_string(int32_t x, int32_t y, char *s, int fontsize, uint32_t colidx)
 {
 	int32_t i;
-	switch (fontsize)
-	{
-	case 24:
-		for (i = 0; *s; i++, x += font_vga_24x24.width, s++)
-			put_char_big(x, y, *s, fontsize, colidx);
-		break;
-	case 64:
-		for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
-			put_char_big(x, y, *s, fontsize, colidx);
-		break;
-	default:
-		for (i = 0; *s; i++, x += font_vga_64x64.width, s++)
-			put_char_big(x, y, *s, fontsize, colidx);
-		break;
-	}
+	for (i = 0; *s; i++, x += fontsize, s++)
+		put_char_big(x, y, *s, fontsize, colidx);
 }
 
 void put_string_center(int32_t x, int32_t y, char *s, int fontsize, uint32_t colidx)
 {
 	size_t sl = strlen(s);
-	switch (fontsize)
-	{
-	case 24:
-		put_string(x - sl * font_vga_24x24.width / 2, y - font_vga_24x24.height / 2, s, fontsize, colidx);
-		break;
-	case 64:
-		put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, fontsize, colidx);
-		break;
-	default:
-		put_string(x - sl * font_vga_64x64.width / 2, y - font_vga_64x64.height / 2, s, fontsize, colidx);
-		break;
-	}
+	put_string(x - sl * fontsize / 2, y - fontsize / 2, s, fontsize, colidx);
 }
 
 void setcolor(uint32_t colidx, uint32_t value)

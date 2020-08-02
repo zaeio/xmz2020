@@ -39,4 +39,5 @@ void rect(int x1, int y1, int x2, int y2, unsigned colidx);
 void fillrect(int x1, int y1, int x2, int y2, unsigned colidx);
 
 void put_char_big(int x, int y, char c_ascii, int fontsize, int colidx);
+void put_const_string(int x_c, int y_c, char *s, int strl, int fontsize, uint32_t colidx);
 #endif /* _FBUTILS_H */
