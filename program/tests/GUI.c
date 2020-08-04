@@ -5,11 +5,14 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "tslib.h"
 #include "fbutils.h"
 #include "testutils.h"
 #include "font_big.h"
+//#include "ak_vi.h"
 
 #define STATE_WELCOME 0
 #define STATE_CALL 1
@@ -36,288 +39,331 @@ int PRINT_TIME_FLAG = -1;
 
 static void sig(int sig)
 {
-    close_framebuffer();
-    fflush(stderr);
-    printf("signal %d caught\n", sig);
-    fflush(stdout);
-    exit(1);
+        close_framebuffer();
+        fflush(stderr);
+        printf("signal %d caught\n", sig);
+        fflush(stdout);
+        exit(1);
 }
 
 void print_usage_info()
 {
-    fillrect(0, 200, xres / 7 * 4, 400, 0); //信息背景
-    switch (current_state)
-    {
-    case STATE_WELCOME:
-        put_const_string(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
-        put_const_string(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
-        break;
-    case STATE_CALL:
-        put_const_string(xres / 7 * 2, 250, CS_48x48_calling, 4, 48, 1);
-        put_const_string(xres / 7 * 2, 340, CS_48x48_cancel, 6, 48, 1);
-        break;
-    case STATE_NUM_ERROR:
-        put_const_string(xres / 7 * 2, 250, CS_48x48_rowng_number, 5, 48, 1);
-        put_const_string(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
-        break;
+        fillrect(0, 200, xres / 7 * 4, 400, 0); //信息背景
+        switch (current_state)
+        {
+        case STATE_WELCOME:
+                put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+                put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+                break;
+        case STATE_CALL:
+                put_const_string_center(xres / 7 * 2 - 40, 250, CS_48x48_calling, 4, 48, 1);
+                put_const_string_center(xres / 7 * 2, 340, CS_48x48_cancel, 6, 48, 1);
+                break;
+        case STATE_NUM_ERROR:
+                put_const_string_center(xres / 7 * 2, 250, CS_48x48_wrong_number, 5, 48, 1);
+                put_const_string_center(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
+                break;
 
-    default:
-        put_const_string(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
-        put_const_string(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
-        break;
-    }
+        default:
+                put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+                put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+                break;
+        }
 }
 
 static void refresh_screen(void)
 {
-    int i;
+        int i;
 
-    fillrect(0, 0, xres - 1, yres - 1, 0); //背景
-    put_const_string(xres / 7 * 2, 60, CS_48x48_sysname, 8, 48, 1);
-    print_usage_info();
+        fillrect(0, 0, xres - 1, yres - 1, 0); //背景
+        put_const_string_center(xres / 7 * 2, 60, CS_48x48_sysname, 8, 48, 1);
+        print_usage_info();
 
-    for (i = 0; i < TEXTBOXES_NUM; i++)
-        textbox_draw(&textboxes[0]);
+        for (i = 0; i < TEXTBOXES_NUM; i++)
+                textbox_draw(&textboxes[0]);
 
-    for (i = 0; i < NR_BUTTONS; i++)
-        button_draw(&buttons[i]);
+        for (i = 0; i < NR_BUTTONS; i++)
+                button_draw(&buttons[i]);
 }
 
 void init_widget()
 {
-    int i, j;
+        int i, j;
 
-    /* Initialize buttons */
-    int btn_number_w = xres / 7;
-    int btn_number_h = yres / 5;
+        /* Initialize buttons */
+        int btn_number_w = xres / 7;
+        int btn_number_h = yres / 5;
 
-    memset(&buttons, 0, sizeof(buttons));
-    for (i = 0; i < NR_BUTTONS; i++)
-    {
-        buttons[i].w = btn_number_w;
-        buttons[i].h = btn_number_h;
-        buttons[i].fill_colidx[0] = 2;
-        buttons[i].fill_colidx[1] = 3;
-        buttons[i].border_colidx[0] = buttons[i].border_colidx[1] = 0;
-        buttons[i].font_colidx[0] = buttons[i].font_colidx[1] = 1;
-    }
-    buttons[10].fill_colidx[0] = buttons[11].fill_colidx[0] = 4; //#*的颜色
-    buttons[10].fill_colidx[1] = buttons[11].fill_colidx[1] = 5;
+        memset(&buttons, 0, sizeof(buttons));
+        for (i = 0; i < NR_BUTTONS; i++)
+        {
+                buttons[i].w = btn_number_w;
+                buttons[i].h = btn_number_h;
+                buttons[i].fill_colidx[0] = 2;
+                buttons[i].fill_colidx[1] = 3;
+                buttons[i].border_colidx[0] = buttons[i].border_colidx[1] = 0;
+                buttons[i].font_colidx[0] = buttons[i].font_colidx[1] = 1;
+        }
+        buttons[10].fill_colidx[0] = buttons[11].fill_colidx[0] = 4; //#*的颜色
+        buttons[10].fill_colidx[1] = buttons[11].fill_colidx[1] = 5;
 
-    buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
-    buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
-    buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = btn_number_w * 6;
+        buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
+        buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
+        buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = btn_number_w * 6;
 
-    buttons[7].y = buttons[8].y = buttons[9].y = btn_number_h;
-    buttons[4].y = buttons[5].y = buttons[6].y = btn_number_h * 2;
-    buttons[1].y = buttons[2].y = buttons[3].y = btn_number_h * 3;
-    buttons[10].y = buttons[0].y = buttons[11].y = btn_number_h * 4;
+        buttons[7].y = buttons[8].y = buttons[9].y = btn_number_h;
+        buttons[4].y = buttons[5].y = buttons[6].y = btn_number_h * 2;
+        buttons[1].y = buttons[2].y = buttons[3].y = btn_number_h * 3;
+        buttons[10].y = buttons[0].y = buttons[11].y = btn_number_h * 4;
 
-    buttons[0].text = "0";
-    buttons[1].text = "1";
-    buttons[2].text = "2";
-    buttons[3].text = "3";
-    buttons[4].text = "4";
-    buttons[5].text = "5";
-    buttons[6].text = "6";
-    buttons[7].text = "7";
-    buttons[8].text = "8";
-    buttons[9].text = "9";
-    buttons[10].text = "#";
-    buttons[11].text = "*";
+        buttons[0].text = "0";
+        buttons[1].text = "1";
+        buttons[2].text = "2";
+        buttons[3].text = "3";
+        buttons[4].text = "4";
+        buttons[5].text = "5";
+        buttons[6].text = "6";
+        buttons[7].text = "7";
+        buttons[8].text = "8";
+        buttons[9].text = "9";
+        buttons[10].text = "#";
+        buttons[11].text = "*";
 
-    /* Initialize textboxes */
-    textboxes[0].x = xres / 7 * 4;
-    textboxes[0].y = 0;
-    textboxes[0].w = xres / 7 * 3;
-    textboxes[0].h = yres / 5;
-    textboxes[0].fill_colidx = 4;
-    textboxes[0].border_colidx = 0;
+        /* Initialize textboxes */
+        textboxes[0].x = xres / 7 * 4;
+        textboxes[0].y = 0;
+        textboxes[0].w = xres / 7 * 3;
+        textboxes[0].h = yres / 5;
+        textboxes[0].fill_colidx = 4;
+        textboxes[0].border_colidx = 0;
 
-    for (j = 0; j < TEXTBOXES_NUM; j++)
-    {
-        textboxes[j].text_cap = 4;
-        textboxes[j].font_colidx = 1;
-        for (i = 0; i <= textboxes[j].text_cap; i++, textboxes[j].text[i] = '\0')
-            ;
-    }
+        for (j = 0; j < TEXTBOXES_NUM; j++)
+        {
+                textboxes[j].text_cap = 4;
+                textboxes[j].font_colidx = 1;
+                for (i = 0; i <= textboxes[j].text_cap; i++, textboxes[j].text[i] = '\0')
+                        ;
+        }
 
-    refresh_screen();
+        refresh_screen();
 }
 
 void print_time()
 {
-    struct timeval end;
-    static struct timeval last;
+        struct timeval end;
+        static struct timeval last;
 
-    int timespend;
+        int timespend;
 
-    gettimeofday(&end, NULL);
-    if (((timespend = end.tv_sec - start.tv_sec) % 1 == 0) && last.tv_sec != end.tv_sec)
-        printf("wating time = %d\n", timespend);
-    last.tv_sec = end.tv_sec;
+        gettimeofday(&end, NULL);
+        printf("wating time = %d\n", end.tv_sec - start.tv_sec);
+}
+
+void waiting_dots(void)
+{
+        int i, j;
+        while (1)
+        {
+                sleep(1);
+                for (i = 0; i < 3; i++)
+                {
+                        put_const_string(350 + i * 32, 226, fontdata_48x48, 1, 48, 1);
+                        //print_time();
+                        sleep(1);
+                }
+                for (i = 0; i < 3; i++)
+                {
+                        put_const_string(350 + i * 32, 226, fontdata_48x48, 1, 48, 0);
+                }
+        }
 }
 
 int main(int argc, char **argv)
 {
-    struct tsdev *ts;
-    int x, y;
-    unsigned int i;
-    unsigned int mode = 0;
-    int quit_pressed = 0;
+        struct tsdev *ts;
+        int x, y;
+        unsigned int i;
+        unsigned int mode = 0;
+        int quit_pressed = 0;
 
-    signal(SIGSEGV, sig); //这三个是程序中断退出信号
-    signal(SIGINT, sig);  //按Ctrl+c退出程序
-    signal(SIGTERM, sig); //kill(1)终止
+        pthread_t thID_dot;
 
-    while (1)
-    {
-        const struct option long_options[] = {
-            {"help", no_argument, NULL, 'h'},
-            {"rotate", required_argument, NULL, 'r'},
-            {"version", no_argument, NULL, 'v'},
-        };
+        signal(SIGSEGV, sig); //这三个是程序中断退出信号
+        signal(SIGINT, sig);  //按Ctrl+c退出程序
+        signal(SIGTERM, sig); //kill(1)终止
 
-        int option_index = 0;
-        int c = getopt_long(argc, argv, "hvr:", long_options, &option_index);
-
-        errno = 0;
-        if (c == -1)
-            break;
-
-        switch (c)
+        while (1)
         {
-        case 'v':
-            print_version();
-            return 0;
+                const struct option long_options[] = {
+                    {"help", no_argument, NULL, 'h'},
+                    {"rotate", required_argument, NULL, 'r'},
+                    {"version", no_argument, NULL, 'v'},
+                };
 
-        case 'r':
-            /* extern in fbutils.h */
-            rotation = atoi(optarg);
-            if (rotation < 0 || rotation > 3)
-            {
-                return 0;
-            }
-            break;
+                int option_index = 0;
+                int c = getopt_long(argc, argv, "hvr:", long_options, &option_index);
 
-        default:
-            return 0;
+                errno = 0;
+                if (c == -1)
+                        break;
+
+                switch (c)
+                {
+                case 'v':
+                        print_version();
+                        return 0;
+
+                case 'r':
+                        /* extern in fbutils.h */
+                        rotation = atoi(optarg);
+                        if (rotation < 0 || rotation > 3)
+                        {
+                                return 0;
+                        }
+                        break;
+
+                default:
+                        return 0;
+                }
+
+                if (errno)
+                {
+                        char str[9];
+
+                        sprintf(str, "option ?");
+                        str[7] = c & 0xff;
+                        perror(str);
+                }
         }
 
-        if (errno)
+        ts = ts_setup(NULL, 0);
+        if (!ts)
         {
-            char str[9];
-
-            sprintf(str, "option ?");
-            str[7] = c & 0xff;
-            perror(str);
+                perror("ts_open");
+                exit(1);
         }
-    }
 
-    ts = ts_setup(NULL, 0);
-    if (!ts)
-    {
-        perror("ts_open");
-        exit(1);
-    }
+        if (open_framebuffer())
+        {
+                close_framebuffer();
+                ts_close(ts);
+                exit(1);
+        }
 
-    if (open_framebuffer())
-    {
+        x = xres / 2;
+        y = yres / 2;
+
+        for (i = 0; i < NR_COLORS; i++)
+                setcolor(i, palette[i]);
+
+        init_widget();
+
+        while (1)
+        {
+                struct ts_sample samp;
+                int ret;
+
+                /* Show the cross */
+                if ((mode & 15) != 1)
+                        put_cross(x, y, 4 | XORMODE);
+
+                ret = ts_read(ts, &samp, 1);
+                samp.x = xres - samp.x;
+
+                /* Hide it */
+                if ((mode & 15) != 1)
+                        put_cross(x, y, 4 | XORMODE);
+
+                if (ret < 0)
+                {
+                        perror("ts_read");
+                        close_framebuffer();
+                        ts_close(ts);
+                        exit(1);
+                }
+
+                if (ret != 1)
+                        continue;
+
+                //按钮事件
+                for (i = 0; i < NR_BUTTONS; i++)
+                        if (button_handle(&buttons[i], samp.x, samp.y, samp.pressure))
+                                switch (i)
+                                {
+                                case 10: //#
+                                {
+                                        gettimeofday(&start, NULL);
+
+                                        // if (0 != ak_vi_open(0))
+                                        // {
+                                        //         printf("vi device open failed\n");
+                                        // }
+
+                                        if (current_state == STATE_WELCOME)
+                                        {
+                                                int floor, num;
+                                                floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
+                                                num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
+                                                if (floor > 0 && floor <= 10 && num > 0 && num <= 4)
+                                                {
+                                                        current_state = STATE_CALL;
+                                                        print_usage_info();
+                                                        if (pthread_create(&thID_dot, NULL, (void *)waiting_dots, NULL) != 0)
+                                                        {
+                                                                printf("Create pthread error!\n");
+                                                                exit(1);
+                                                        }
+                                                }
+                                                else
+                                                {
+                                                        current_state = STATE_NUM_ERROR;
+                                                        print_usage_info();
+                                                }
+                                        }
+                                        else if (current_state == STATE_CALL)
+                                        {
+                                                current_state = STATE_WELCOME;
+                                                pthread_cancel(thID_dot);
+                                                print_usage_info();
+                                        }
+                                }
+                                break;
+                                case 11: //删除
+                                        textbox_delchar(&textboxes[0]);
+                                        if (current_state == STATE_NUM_ERROR)
+                                        {
+                                                current_state = STATE_WELCOME;
+                                                print_usage_info();
+                                        }
+                                        break;
+                                default://数字键
+                                        textbox_addchar(&textboxes[0], '0' + i);
+                                        if (current_state == STATE_NUM_ERROR)
+                                        {
+                                                current_state = STATE_WELCOME;
+                                                print_usage_info();
+                                        }
+                                        break;
+                                }
+
+                //printf("%ld.%06ld: %6d %6d %6d\n", samp.tv.tv_sec, samp.tv.tv_usec, samp.x, samp.y, samp.pressure);
+
+                if (samp.pressure > 0)
+                {
+                        if (mode == 0x80000001)
+                                line(x, y, samp.x, samp.y, 2);
+                        x = samp.x;
+                        y = samp.y;
+                        mode |= 0x80000000;
+                }
+                else
+                        mode &= ~0x80000000;
+                if (quit_pressed)
+                        break;
+        }
+        fillrect(0, 0, xres - 1, yres - 1, 0);
         close_framebuffer();
         ts_close(ts);
-        exit(1);
-    }
 
-    x = xres / 2;
-    y = yres / 2;
-
-    for (i = 0; i < NR_COLORS; i++)
-        setcolor(i, palette[i]);
-
-    init_widget();
-
-    while (1)
-    {
-        struct ts_sample samp;
-        int ret;
-
-        /* Show the cross */
-        if ((mode & 15) != 1)
-            put_cross(x, y, 4 | XORMODE);
-
-        ret = ts_read(ts, &samp, 1);
-        samp.x = xres - samp.x;
-
-        /* Hide it */
-        if ((mode & 15) != 1)
-            put_cross(x, y, 4 | XORMODE);
-
-        if (ret < 0)
-        {
-            perror("ts_read");
-            close_framebuffer();
-            ts_close(ts);
-            exit(1);
-        }
-
-        if (ret != 1)
-            continue;
-
-        //按钮事件
-        for (i = 0; i < NR_BUTTONS; i++)
-            if (button_handle(&buttons[i], samp.x, samp.y, samp.pressure))
-                switch (i)
-                {
-                case 10: //#
-                {
-                    if (current_state == STATE_WELCOME)
-                    {
-                        int floor, num;
-                        floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
-                        num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
-                        if (floor > 0 && floor <= 10 && num > 0 && num <= 4)
-                            current_state = STATE_CALL;
-                        else
-                            current_state = STATE_NUM_ERROR;
-                    }
-                    else if (current_state == STATE_CALL)
-                    {
-                        current_state = STATE_WELCOME;
-                    }
-                    print_usage_info();
-                }
-                break;
-                case 11: //删除
-                    textbox_delchar(&textboxes[0]);
-                    if (current_state == STATE_NUM_ERROR)
-                    {
-                        current_state = STATE_WELCOME;
-                        print_usage_info();
-                    }
-                    break;
-                default:
-                    textbox_addchar(&textboxes[0], '0' + i);
-                    break;
-                }
-
-        //printf("%ld.%06ld: %6d %6d %6d\n", samp.tv.tv_sec, samp.tv.tv_usec, samp.x, samp.y, samp.pressure);
-
-        if (samp.pressure > 0)
-        {
-            if (mode == 0x80000001)
-                line(x, y, samp.x, samp.y, 2);
-            x = samp.x;
-            y = samp.y;
-            mode |= 0x80000000;
-        }
-        else
-            mode &= ~0x80000000;
-        if (quit_pressed)
-            break;
-    }
-    fillrect(0, 0, xres - 1, yres - 1, 0);
-    close_framebuffer();
-    ts_close(ts);
-
-    return 0;
+        return 0;
 }

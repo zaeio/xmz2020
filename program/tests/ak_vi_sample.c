@@ -29,11 +29,11 @@
 #include "ak_log.h"
 #include "ak_tde.h"
 
-#define LEN_HINT         512
+#define LEN_HINT 512
 #define LEN_OPTION_SHORT 512
 
-#define DEF_FRAME_DEPTH		3
-#define RES_GROUP	5
+#define DEF_FRAME_DEPTH 3
+#define RES_GROUP 5
 
 int frame_num = 10;
 int channel_num = 0;
@@ -43,14 +43,14 @@ int main_res_id = 4;
 int sub_res_id = 0;
 
 /* support resolution list */
-int  res_group[RES_GROUP]=
-{{640, 360},			/* 640*360 */
- {640, 480},			/*   VGA   */
- {1280,720},			/*   720P  */
- {960, 1080},			/*   1080i */
- {1920,1080}			/*   1080P */
+int res_group[RES_GROUP] =
+    {
+	{640, 360},  /* 640*360 */
+	{640, 480},  /*   VGA   */
+	{1280, 720}, /*   720P  */
+	{960, 1080}, /*   1080i */
+	{1920, 1080} /*   1080P */
 };
-
 
 /*     ***********************************
     ***********************************
@@ -83,7 +83,7 @@ int  res_group[RES_GROUP]=
 //     { "path"        	, required_argument , NULL , 'p' } , //"[PATH] 数据帧保存路径" ,
 //     { "main chn res"    , required_argument , NULL , 'm' } , //"[PATH] 数据帧保存路径" ,
 //     { "sub chn res"     , required_argument , NULL , 's' } , //"[PATH] 数据帧保存路径" ,
-	
+
 // 	{NULL	, 0, 0, 0}
 // };
 
@@ -104,7 +104,7 @@ int  res_group[RES_GROUP]=
 // {
 //     int i;
 // 	printf("%s\n" , pc_prog_name);
-//     for(i = 0; i < sizeof(option_long) / sizeof(struct option); i ++) 
+//     for(i = 0; i < sizeof(option_long) / sizeof(struct option); i ++)
 //     {
 // 		if(option_long[i].name != NULL)
 // 	        ak_print_normal(MODULE_ID_VI,"\t--%-16s -%c %s\n" , option_long[ i ].name , option_long[ i ].val , ac_option_hint[ i ]);
@@ -204,9 +204,12 @@ static int check_dir(const char *path)
 		return 0;
 
 	stat(path, &buf);
-	if (S_ISDIR(buf.st_mode)) {
+	if (S_ISDIR(buf.st_mode))
+	{
 		return 1;
-	} else {
+	}
+	else
+	{
 		return 0;
 	}
 }
@@ -218,8 +221,8 @@ static int check_dir(const char *path)
  * frame[IN]: pointer to yuv data, include main and sub channel data
  * attr[IN]:  vi channel attribute.
  */
-static void save_yuv_data(const char *path, int index, 
-		struct video_input_frame *frame, VI_CHN_ATTR *attr)
+static void save_yuv_data(const char *path, int index,
+			  struct video_input_frame *frame, VI_CHN_ATTR *attr)
 {
 	FILE *fd = NULL;
 	unsigned int len = 0;
@@ -233,7 +236,7 @@ static void save_yuv_data(const char *path, int index,
 	/* construct file name */
 	ak_get_localdate(&date);
 	ak_date_to_string(&date, time_str);
-	if(channel_num == VIDEO_CHN0)
+	if (channel_num == VIDEO_CHN0)
 		sprintf(file_path, "%smain_%s_%d_%dx%d.yuv", path, time_str, index,
 			attr->res.width, attr->res.height);
 	else
@@ -245,18 +248,21 @@ static void save_yuv_data(const char *path, int index,
 	 * save main channel yuv here
 	 */
 	fd = fopen(file_path, "w+b");
-	if (fd) {
+	if (fd)
+	{
 		buf = frame->vi_frame.data;
 		len = frame->vi_frame.len;
-		do {
+		do
+		{
 			len -= fwrite(buf, 1, len, fd);
 		} while (len != 0);
-		
+
 		fclose(fd);
-	} else {
+	}
+	else
+	{
 		ak_print_normal(MODULE_ID_VI, "open YUV file failed!!\n");
 	}
-		
 }
 
 /*
@@ -269,7 +275,7 @@ static void save_yuv_data(const char *path, int index,
  * attr[IN]:   vi channel attribute.
  */
 static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
-		VI_CHN_ATTR *attr, VI_CHN_ATTR *attr_sub)
+			    VI_CHN_ATTR *attr, VI_CHN_ATTR *attr_sub)
 {
 	int count = 0;
 	struct video_input_frame frame;
@@ -279,26 +285,28 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 	/*
 	 * To get frame by loop
 	 */
-    while (count <  number) {
+	while (count < number)
+	{
 		memset(&frame, 0x00, sizeof(frame));
 
 		/* to get frame according to the channel number */
 		int ret = ak_vi_get_frame(channel_num, &frame);
 
-		if (!ret) {
+		if (!ret)
+		{
 			/* 
 			 * Here, you can implement your code to use this frame.
 			 * Notice, do not occupy it too long.
 			 */
 			ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn yuv len: %u\n", count,
-					frame.vi_frame.len);
+					   frame.vi_frame.len);
 			ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn phyaddr: %lu\n", count,
-					frame.phyaddr);
+					   frame.phyaddr);
 
-			if(channel_num == VIDEO_CHN0)
-				save_yuv_data(save_path, count, &frame,attr);
+			if (channel_num == VIDEO_CHN0)
+				save_yuv_data(save_path, count, &frame, attr);
 			else
-				save_yuv_data(save_path, count, &frame,attr_sub);
+				save_yuv_data(save_path, count, &frame, attr_sub);
 
 			/* 
 			 * in this context, this frame was useless,
@@ -306,7 +314,9 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 			 */
 			ak_vi_release_frame(channel_num, &frame);
 			count++;
-		} else {
+		}
+		else
+		{
 
 			/* 
 			 *	If getting too fast, it will have no data,
@@ -317,7 +327,7 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 		}
 	}
 
-	ak_print_normal(MODULE_ID_VI,"capture finish\n\n");
+	ak_print_normal(MODULE_ID_VI, "capture finish\n\n");
 }
 
 /**
@@ -332,36 +342,35 @@ int main(int argc, char **argv)
 	/* start the application */
 	sdk_run_config config;
 	config.mem_trace_flag = SDK_RUN_DEBUG;
-	ak_sdk_init( &config );
+	ak_sdk_init(&config);
 
-    	ak_print_normal(MODULE_ID_VI, "*****************************************\n");
+	ak_print_normal(MODULE_ID_VI, "*****************************************\n");
 	ak_print_normal(MODULE_ID_VI, "** vi demo version: %s **\n", ak_vi_get_version());
-   	 ak_print_normal(MODULE_ID_VI, "*****************************************\n");
-	
-	if( parse_option( argc, argv ) == 0 ) 
+	ak_print_normal(MODULE_ID_VI, "*****************************************\n");
+
+	if (parse_option(argc, argv) == 0)
 	{
 		return 0;
 	}
 	/*check param validate*/
-	if(frame_num < 0 || frame_num > 1000 || channel_num < 0 || channel_num > 2 || strlen(isp_path) == 0 || strlen(save_path) == 0 )
+	if (frame_num < 0 || frame_num > 1000 || channel_num < 0 || channel_num > 2 || strlen(isp_path) == 0 || strlen(save_path) == 0)
 	{
-		ak_print_error_ex(MODULE_ID_VI,"INPUT param error!\n");
-        	help_hint( argv[ 0 ] );
+		ak_print_error_ex(MODULE_ID_VI, "INPUT param error!\n");
+		help_hint(argv[0]);
 		return 0;
 	}
 
 	/*check the data save path */
-	if(check_dir(save_path) == 0)
+	if (check_dir(save_path) == 0)
 	{
 		ak_print_error_ex(MODULE_ID_VI, "save path is not existed!\n");
 		return 0;
-	}	
-
+	}
 
 	/* 
 	 * step 0: global value initialize
 	 */
-	int ret = -1;								//return value
+	int ret = -1; //return value
 	int width = res_group[main_res_id].width;
 	int height = res_group[main_res_id].height;
 	int subwidth = res_group[sub_res_id].width;
@@ -373,8 +382,9 @@ int main(int argc, char **argv)
 	 * step 1: open video input device
 	 */
 	ret = ak_vi_open(VIDEO_DEV0);
-	if (AK_SUCCESS != ret) {
-		ak_print_error_ex(MODULE_ID_VI, "vi device open failed\n");	
+	if (AK_SUCCESS != ret)
+	{
+		ak_print_error_ex(MODULE_ID_VI, "vi device open failed\n");
 		goto exit;
 	}
 
@@ -382,16 +392,17 @@ int main(int argc, char **argv)
 	 * step 2: load isp config
 	 */
 	ret = ak_vi_load_sensor_cfg(VIDEO_DEV0, isp_path);
-	if (AK_SUCCESS != ret) {
-		ak_print_error_ex(MODULE_ID_VI, "vi device load isp cfg [%s] failed!\n", isp_path);	
+	if (AK_SUCCESS != ret)
+	{
+		ak_print_error_ex(MODULE_ID_VI, "vi device load isp cfg [%s] failed!\n", isp_path);
 		goto exit;
 	}
 
 	/* 
 	 * step 3: get sensor support max resolution
 	 */
-	RECTANGLE_S res;				//max sensor resolution
-	VI_DEV_ATTR	dev_attr;
+	RECTANGLE_S res; //max sensor resolution
+	VI_DEV_ATTR dev_attr;
 	dev_attr.dev_id = VIDEO_DEV0;
 	dev_attr.crop.left = 0;
 	dev_attr.crop.top = 0;
@@ -404,12 +415,15 @@ int main(int argc, char **argv)
 
 	/* get sensor resolution */
 	ret = ak_vi_get_sensor_resolution(VIDEO_DEV0, &res);
-	if (ret) {
-		ak_print_error_ex(MODULE_ID_VI, "Can't get dev[%d]resolution\n",VIDEO_DEV0);
+	if (ret)
+	{
+		ak_print_error_ex(MODULE_ID_VI, "Can't get dev[%d]resolution\n", VIDEO_DEV0);
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
-	} else {
-		ak_print_normal_ex(MODULE_ID_VI, "get dev res w:[%d]h:[%d]\n",res.width, res.height);
+	}
+	else
+	{
+		ak_print_normal_ex(MODULE_ID_VI, "get dev res w:[%d]h:[%d]\n", res.width, res.height);
 		dev_attr.crop.width = res.width;
 		dev_attr.crop.height = res.height;
 	}
@@ -419,7 +433,8 @@ int main(int argc, char **argv)
 	 * default parameters: 25fps, day mode
 	 */
 	ret = ak_vi_set_dev_attr(VIDEO_DEV0, &dev_attr);
-	if (ret) {
+	if (ret)
+	{
 		ak_print_error_ex(MODULE_ID_VI, "vi device set device attribute failed!\n");
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
@@ -436,13 +451,13 @@ int main(int argc, char **argv)
 	/*disable frame control*/
 	chn_attr.frame_rate = 0;
 	ret = ak_vi_set_chn_attr(VIDEO_CHN0, &chn_attr);
-	if (ret) {
+	if (ret)
+	{
 		ak_print_error_ex(MODULE_ID_VI, "vi device set channel [%d] attribute failed!\n", VIDEO_CHN0);
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
 	}
 	ak_print_normal_ex(MODULE_ID_VI, "vi device main sub channel attribute\n");
-
 
 	/*
 	 * step 6: set sub channel attribute
@@ -455,7 +470,8 @@ int main(int argc, char **argv)
 	/*disable frame control*/
 	chn_attr_sub.frame_rate = 0;
 	ret = ak_vi_set_chn_attr(VIDEO_CHN1, &chn_attr_sub);
-	if (ret) {
+	if (ret)
+	{
 		ak_print_error_ex(MODULE_ID_VI, "vi device set channel [%d] attribute failed!\n", VIDEO_CHN1);
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
@@ -466,7 +482,8 @@ int main(int argc, char **argv)
 	 * step 7: enable vi device 
 	 */
 	ret = ak_vi_enable_dev(VIDEO_DEV0);
-	if (ret) {
+	if (ret)
+	{
 		ak_print_error_ex(MODULE_ID_VI, "vi device enable device  failed!\n");
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
@@ -476,9 +493,9 @@ int main(int argc, char **argv)
 	 * step 8: enable vi main channel 
 	 */
 	ret = ak_vi_enable_chn(VIDEO_CHN0);
-	if(ret)
+	if (ret)
 	{
-		ak_print_error_ex(MODULE_ID_VI, "vi channel[%d] enable failed!\n",VIDEO_CHN0);
+		ak_print_error_ex(MODULE_ID_VI, "vi channel[%d] enable failed!\n", VIDEO_CHN0);
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
 	}
@@ -487,9 +504,9 @@ int main(int argc, char **argv)
 	 * step 9: enable vi sub channel 
 	 */
 	ret = ak_vi_enable_chn(VIDEO_CHN1);
-	if(ret)
+	if (ret)
 	{
-		ak_print_error_ex(MODULE_ID_VI, "vi channel[%d] enable failed!\n",VIDEO_CHN1);
+		ak_print_error_ex(MODULE_ID_VI, "vi channel[%d] enable failed!\n", VIDEO_CHN1);
 		ak_vi_close(VIDEO_DEV0);
 		goto exit;
 	}
