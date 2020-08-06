@@ -107,7 +107,6 @@ struct video_input_frame {
 	int	type;
 	void *mdinfo;
 };
-
 /* ak_vi_get_version
  * return the vi lib version
  */

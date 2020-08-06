@@ -36,132 +36,130 @@ static int display_num = 4;
 static AK_GP_FORMAT data_format = GP_FORMAT_YUV420P;
 static AK_GP_FORMAT out_format  = GP_FORMAT_RGB888;
 
-static char ac_option_hint[  ][ LEN_HINT ] = {                                         //操作提示数组
-    "打印帮助信息" ,
-    "显示屏幕类型 0 - MIPI, 1 - RGB" ,
-    "yuv图像文件路径目录" ,
-    "分屏数目 [1, 4]" ,
-    "[NUM] 数据输入格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 4:YUV420P 5:YUV420SP 6:ARGB8888 7:RGBA8888 8:ABGR8888 9:BGRA8888 10:TILED32X4" ,
-    "[NUM] 数据输出格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 ",
-    "logo 文件的路径，只支持提供的anyka.logo.577.160.rgb文件显示",
-    " ",
-};
+// static char ac_option_hint[  ][ LEN_HINT ] = {                                         //操作提示数组
+//     "打印帮助信息" ,
+//     "显示屏幕类型 0 - MIPI, 1 - RGB" ,
+//     "yuv图像文件路径目录" ,
+//     "分屏数目 [1, 4]" ,
+//     "[NUM] 数据输入格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 4:YUV420P 5:YUV420SP 6:ARGB8888 7:RGBA8888 8:ABGR8888 9:BGRA8888 10:TILED32X4" ,
+//     "[NUM] 数据输出格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 ",
+//     "logo 文件的路径，只支持提供的anyka.logo.577.160.rgb文件显示",
+//     " ",
+// };
 
 
-static struct option option_long[ ] = {
-    { "help"              , no_argument       , NULL , 'h' } ,      //"打印帮助信息" ,
-    { "screen-type"       , required_argument , NULL , 't' } ,      //"显示屏幕类型" ,
-    { "file-dir"          , required_argument , NULL , 'f' } ,      //"文件路径" ,
-    { "display-num"       , required_argument , NULL , 'n' } ,      //"分屏数目1-4" ,
-    { "format-in"         , required_argument , NULL , 'i' } ,      //"[NUM] 数据输入格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 4:YUV420P 5:YUV420SP 6:ARGB8888 7:RGBA8888 8:ABGR8888 9:BGRA8888 10:TILED32X4" ,
-    { "format-out"        , required_argument , NULL , 'o' } ,      //"[NUM] 数据输出格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 ,
-    { "logo-file"         , required_argument , NULL , 'l' } ,      //"logo 文件的路径，只支持提供的anyka.logo.rgb文件显示"
-    { 0                   , 0                 , 0    , 0   } ,
- };
+// static struct option option_long[ ] = {
+//     { "help"              , no_argument       , NULL , 'h' } ,      //"打印帮助信息" ,
+//     { "screen-type"       , required_argument , NULL , 't' } ,      //"显示屏幕类型" ,
+//     { "file-dir"          , required_argument , NULL , 'f' } ,      //"文件路径" ,
+//     { "display-num"       , required_argument , NULL , 'n' } ,      //"分屏数目1-4" ,
+//     { "format-in"         , required_argument , NULL , 'i' } ,      //"[NUM] 数据输入格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 4:YUV420P 5:YUV420SP 6:ARGB8888 7:RGBA8888 8:ABGR8888 9:BGRA8888 10:TILED32X4" ,
+//     { "format-out"        , required_argument , NULL , 'o' } ,      //"[NUM] 数据输出格式 0:RGB565 1:RGB888 2:BGR565 3:BGR888 ,
+//     { "logo-file"         , required_argument , NULL , 'l' } ,      //"logo 文件的路径，只支持提供的anyka.logo.rgb文件显示"
+//     { 0                   , 0                 , 0    , 0   } ,
+//  };
 
 /*
  * help_hint: use the -h --help option.Print option of help information
  * return: 0
  */
-static void usage(const char * name)
-{
-    ak_print_normal(MODULE_ID_VO," %s -t [num] -f [yuv-file-dir] -n [num] -i [num] -o [num] -l [logo-dir]\n", name);
-    ak_print_normal(MODULE_ID_VO,"eg: %s -t 0 -f /mnt/yuv -n 1 -i 4 -o 1 -l /mnt/anyka.logo.577.160.rgb\n", name);
-    ak_print_normal(MODULE_ID_VO,"the DATA-file path should contains data-picture in the res 1920*1080 only, all the file should in the same res\n");
-    ak_print_normal(MODULE_ID_VO,"the logo-dir should name anyka.logo.577.160.rgb, this file format is rgb888\n");
-}
+// static void usage(const char * name)
+// {
+//     ak_print_normal(MODULE_ID_VO," %s -t [num] -f [yuv-file-dir] -n [num] -i [num] -o [num] -l [logo-dir]\n", name);
+//     ak_print_normal(MODULE_ID_VO,"eg: %s -t 0 -f /mnt/yuv -n 1 -i 4 -o 1 -l /mnt/anyka.logo.577.160.rgb\n", name);
+//     ak_print_normal(MODULE_ID_VO,"the DATA-file path should contains data-picture in the res 1920*1080 only, all the file should in the same res\n");
+//     ak_print_normal(MODULE_ID_VO,"the logo-dir should name anyka.logo.577.160.rgb, this file format is rgb888\n");
+// }
 
-static int help_hint(void)
-{
-    int i;
+// static int help_hint(void)
+// {
+//     int i;
 
-    ak_print_normal(MODULE_ID_VO,"%s\n" , pc_prog_name);
-    for(i = 0; i < sizeof(option_long) / sizeof(struct option); i ++) {
-        if( option_long[ i ].val != 0 )
-            ak_print_normal(MODULE_ID_VO,"\t--%-16s -%c %s\n" , option_long[ i ].name , option_long[ i ].val , ac_option_hint[ i ]);
-    }
+//     ak_print_normal(MODULE_ID_VO,"%s\n" , pc_prog_name);
+//     for(i = 0; i < sizeof(option_long) / sizeof(struct option); i ++) {
+//         if( option_long[ i ].val != 0 )
+//             ak_print_normal(MODULE_ID_VO,"\t--%-16s -%c %s\n" , option_long[ i ].name , option_long[ i ].val , ac_option_hint[ i ]);
+//     }
 
-    usage(pc_prog_name);
-    ak_print_normal(MODULE_ID_VO, "\n\n");
-    return AK_SUCCESS;
-}
+//     usage(pc_prog_name);
+//     ak_print_normal(MODULE_ID_VO, "\n\n");
+//     return AK_SUCCESS;
+// }
 
 /*
  * get_option_short: fill the stort option string.
  * return: option short string addr.
  */
-static char *get_option_short( struct option *p_option, int i_num_option, char *pc_option_short, int i_len_option )
-{
-    int i;
-    int i_offset = 0;
-    char c_option;
+// static char *get_option_short( struct option *p_option, int i_num_option, char *pc_option_short, int i_len_option )
+// {
+//     int i;
+//     int i_offset = 0;
+//     char c_option;
 
-    for( i = 0 ; i < i_num_option ; i ++ )
-    {
-        if( ( c_option = p_option[ i ].val ) == 0 )
-            continue;
+//     for( i = 0 ; i < i_num_option ; i ++ )
+//     {
+//         if( ( c_option = p_option[ i ].val ) == 0 )
+//             continue;
         
-        switch( p_option[ i ].has_arg )
-        {
-        case no_argument:
-            i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c" , c_option );
-            break;
-        case required_argument:
-            i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c:" , c_option );
-            break;
-        case optional_argument:
-            i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c::" , c_option );
-            break;
-        }
-    }
-    return pc_option_short;
-}
+//         switch( p_option[ i ].has_arg )
+//         {
+//         case no_argument:
+//             i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c" , c_option );
+//             break;
+//         case required_argument:
+//             i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c:" , c_option );
+//             break;
+//         case optional_argument:
+//             i_offset += snprintf( pc_option_short + i_offset , i_len_option - i_offset , "%c::" , c_option );
+//             break;
+//         }
+//     }
+//     return pc_option_short;
+// }
 
-static int parse_option( int argc, char **argv )
-{
-    int i_option;
+// static int parse_option( int argc, char **argv )
+// {
+//     int i_option;
 
-    char ac_option_short[ LEN_OPTION_SHORT ];
-    int i_array_num = sizeof( option_long ) / sizeof( struct option ) ;
-    char c_flag = AK_TRUE;
-    pc_prog_name = argv[ 0 ];
+//     char ac_option_short[ LEN_OPTION_SHORT ];
+//     int i_array_num = sizeof( option_long ) / sizeof( struct option ) ;
+//     char c_flag = AK_TRUE;
+//     pc_prog_name = argv[ 0 ];
 
-    get_option_short( option_long, i_array_num , ac_option_short , LEN_OPTION_SHORT );
-    while((i_option = getopt_long(argc , argv , ac_option_short , option_long , NULL)) > 0) {
-        switch(i_option) {
-            case 'h' :                                                          //help
-                help_hint();
-                c_flag = AK_FALSE;
-                goto parse_option_end;
-            case 't' :                                                          //screen type 
-                screen_flag = atoi( optarg );
-                break;
-            case 'f' :                                                          //data file path
-                data_file = optarg;
-                break;
-            case 'n' :                                                          //display num
-                display_num = atoi( optarg );
-                break;
-            case 'i' :                                                          //data_file format 
-                data_format = atoi(optarg);
-                break;
-            case 'o' :                                                          //out put format
-                out_format = atoi(optarg);
-                break;
-            case 'l' :                                                          //logo file
-                logo_file = optarg;
-                break;
-            default :
-                help_hint();
-                c_flag = AK_FALSE;
-                goto parse_option_end;
-                
-        }
-    }
-parse_option_end:
-
-    return c_flag;
-}
+//     get_option_short( option_long, i_array_num , ac_option_short , LEN_OPTION_SHORT );
+//     while((i_option = getopt_long(argc , argv , ac_option_short , option_long , NULL)) > 0) {
+//         switch(i_option) {
+//             case 'h' :                                                          //help
+//                 help_hint();
+//                 c_flag = AK_FALSE;
+//                 goto parse_option_end;
+//             case 't' :                                                          //screen type 
+//                 screen_flag = atoi( optarg );
+//                 break;
+//             case 'f' :                                                          //data file path
+//                 data_file = optarg;
+//                 break;
+//             case 'n' :                                                          //display num
+//                 display_num = atoi( optarg );
+//                 break;
+//             case 'i' :                                                          //data_file format 
+//                 data_format = atoi(optarg);
+//                 break;
+//             case 'o' :                                                          //out put format
+//                 out_format = atoi(optarg);
+//                 break;
+//             case 'l' :                                                          //logo file
+//                 logo_file = optarg;
+//                 break;
+//             default :
+//                 help_hint();
+//                 c_flag = AK_FALSE;
+//                 goto parse_option_end;
+//         }
+//     }
+// parse_option_end:
+//     return c_flag;
+// }
 
 /* add the  obj to GUI layer */
 static int add_logo_to_gui(void)

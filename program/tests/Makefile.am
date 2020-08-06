@@ -29,7 +29,8 @@ if LINUX
 if SDL
 bin_PROGRAMS		= ts_test_mt ts_calibrate ts_print ts_conf ts_print_mt ts_print_raw ts_finddev ts_verify
 else
-bin_PROGRAMS		= ts_test ts_test_mt ts_calibrate ts_conf ts_print ts_print_mt ts_print_raw ts_harvest ts_finddev ts_verify hello_ts_world GUI
+#bin_PROGRAMS		= ts_test ts_test_mt ts_calibrate ts_conf ts_print ts_print_mt ts_print_raw ts_harvest ts_finddev ts_verify hello_ts_world GUI
+bin_PROGRAMS		= GUI
 endif
 endif
 
@@ -48,7 +49,7 @@ endif
 ##############################################
 ak_lib = /home/bk/sdk_release_dir/platform/lib
 
-GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c video.h ak_vi.h
+GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c video.h ak_vi.h ak_vi_sample.c
 GUI_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS) $(ak_lib)/*.so 
 if FREEBSD
 GUI_SOURCES		+= fbutils-bsd.c
@@ -56,22 +57,22 @@ else
 GUI_SOURCES		+= fbutils-linux.c
 endif
 
-hello_ts_world_SOURCES	= hello_ts_world.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
-hello_ts_world_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
-if FREEBSD
-hello_ts_world_SOURCES		+= fbutils-bsd.c
-else
-hello_ts_world_SOURCES		+= fbutils-linux.c
-endif
+#hello_ts_world_SOURCES	= hello_ts_world.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
+#hello_ts_world_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
+#if FREEBSD
+#hello_ts_world_SOURCES		+= fbutils-bsd.c
+#else
+#hello_ts_world_SOURCES		+= fbutils-linux.c
+#endif
 ##############################################
 
-ts_test_SOURCES		= ts_test.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
-ts_test_LDADD		= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
-if FREEBSD
-ts_test_SOURCES		+= fbutils-bsd.c
-else
-ts_test_SOURCES		+= fbutils-linux.c
-endif
+#ts_test_SOURCES		= ts_test.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h
+#ts_test_LDADD		= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS)
+#if FREEBSD
+#ts_test_SOURCES		+= fbutils-bsd.c
+#else
+#ts_test_SOURCES		+= fbutils-linux.c
+#endif
 
 if SDL
 ts_test_mt_SOURCES	= ts_test_mt_sdl.c sdlutils.c sdlutils.h

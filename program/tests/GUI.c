@@ -12,13 +12,24 @@
 #include "fbutils.h"
 #include "testutils.h"
 #include "font_big.h"
-//#include "ak_vi.h"
+
+#include "ak_common.h"
+#include "ak_common_graphics.h"
+#include "ak_vo.h"
+#include "ak_vi.h"
+#include "ak_mem.h"
+#include "ak_log.h"
+#include "ak_tde.h"
 
 #define STATE_WELCOME 0
 #define STATE_CALL 1
 #define STATE_NUM_ERROR 2
+#define FRAME_WIDTH 640  //585
+#define FRAME_HEIGHT 480 //600
 // #define XRES 1024
 // #define YRES 600
+
+int read_camera();
 
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
@@ -178,6 +189,41 @@ void waiting_dots(void)
         }
 }
 
+void open_yuv(char *filename)
+{
+        unsigned char *rgb_p;
+        char *YUVmap;
+        uint32_t *RGBmap;
+        int i, j;
+
+        YUVmap = (char *)malloc(sizeof(char) * FRAME_WIDTH * FRAME_HEIGHT * 3);
+        FILE *yuv_fp = fopen(filename, "r");
+        if (yuv_fp == NULL)
+        {
+                printf("yuv file not exist!");
+                return;
+        }
+        fread(YUVmap, 1, FRAME_WIDTH * FRAME_HEIGHT * 3, yuv_fp);
+        printf("yuv data get\n");
+        // printf("yuv data:\n");
+        // for (i = 0; i < FRAME_WIDTH; i++)
+        // {
+        //         for (j = 0; j < FRAME_HEIGHT; j++)
+        //         {
+        //                 printf("%X  ", YUVmap[i * FRAME_WIDTH + j]);
+        //         }
+        //         printf("\n\n");
+        // }
+        //RGBmap = (char *)malloc(sizeof(uint32_t) * FRAME_WIDTH * FRAME_HEIGHT);
+        RGBmap = yuv420_to_rgb(YUVmap, FRAME_WIDTH, FRAME_HEIGHT);
+        if (RGBmap == NULL)
+        {
+                printf("RGBmap is NULL!\n");
+                return;
+        }
+        put_rgb_map(0, 0, RGBmap, FRAME_WIDTH, FRAME_HEIGHT);
+}
+
 int main(int argc, char **argv)
 {
         struct tsdev *ts;
@@ -292,13 +338,6 @@ int main(int argc, char **argv)
                                 {
                                 case 10: //#
                                 {
-                                        gettimeofday(&start, NULL);
-
-                                        // if (0 != ak_vi_open(0))
-                                        // {
-                                        //         printf("vi device open failed\n");
-                                        // }
-
                                         if (current_state == STATE_WELCOME)
                                         {
                                                 int floor, num;
@@ -308,11 +347,13 @@ int main(int argc, char **argv)
                                                 {
                                                         current_state = STATE_CALL;
                                                         print_usage_info();
-                                                        if (pthread_create(&thID_dot, NULL, (void *)waiting_dots, NULL) != 0)
-                                                        {
-                                                                printf("Create pthread error!\n");
-                                                                exit(1);
-                                                        }
+                                                        // if (pthread_create(&thID_dot, NULL, (void *)waiting_dots, NULL) != 0)
+                                                        // {
+                                                        //         printf("Create pthread error!\n");
+                                                        //         exit(1);
+                                                        // }
+                                                        //read_camera();
+                                                        open_yuv("/mnt/frame/test.yuv");
                                                 }
                                                 else
                                                 {
@@ -336,7 +377,7 @@ int main(int argc, char **argv)
                                                 print_usage_info();
                                         }
                                         break;
-                                default://数字键
+                                default: //数字键
                                         textbox_addchar(&textboxes[0], '0' + i);
                                         if (current_state == STATE_NUM_ERROR)
                                         {

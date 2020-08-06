@@ -382,7 +382,6 @@ void setcolor(uint32_t colidx, uint32_t value)
 #endif
                 return;
         }
-
         switch (bytes_per_pixel)
         {
         default:
@@ -412,6 +411,77 @@ void setcolor(uint32_t colidx, uint32_t value)
                       ((blue >> (8 - var.blue.length)) << var.blue.offset);
         }
         colormap[colidx] = res;
+}
+
+uint32_t *convert_rgb_format(char *rgbmap, int width, int height)
+{
+        uint16_t red, green, blue;
+        uint32_t *res;
+        int i, j;
+
+        res = (uint32_t *)malloc(sizeof(uint32_t) * width * height);
+        printf("var.red.length = %d,  var.green.length = %d,  var.blue.length = %d\n", var.red.length, var.green.length, var.blue.length);
+        printf("var.red.offset = %d,  var.green.offset = %d,  var.blue.offset = %d\n", var.red.offset, var.green.offset, var.blue.offset);
+
+        for (i = 0; i < height; i++)
+                for (j = 0; j < width; j++)
+                {
+                        red = (rgbmap[i * width + j] >> 16) & 0xff;
+                        green = (rgbmap[i * width + j] >> 8) & 0xff;
+                        blue = rgbmap[i * width + j] & 0xff;
+                        res = ((red >> (8 - var.red.length)) << var.red.offset) |
+                              ((green >> (8 - var.green.length)) << var.green.offset) |
+                              ((blue >> (8 - var.blue.length)) << var.blue.offset);
+                }
+        if (res == NULL)
+                printf("res == NULL\n");
+        return res;
+}
+
+uint32_t *yuv420_to_rgb(char *yuv_data, int width, int height)
+{
+        int size = width * height;
+        int i, j;
+        uint32_t *RGBmap;
+
+        RGBmap = (uint32_t *)malloc(sizeof(uint32_t) * size);
+        for (i = 0; i < height; i++)
+        {
+                for (j = 0; j < width; j++)
+                {
+                        char Y = yuv_data[i * width + j];
+                        char U = yuv_data[(int)(size + (i / 2) * (width / 2) + j / 2)];
+                        char V = yuv_data[(int)(size * 1.25 + (i / 2) * (width / 2) + j / 2)];
+
+                        //printf("Y = %X,  U = %X,  V = %X\n", Y, U, V);
+
+                        // char R = (char)(1.0 * Y + 1.402 * (V - 128));
+                        // char G =  (char)(1.0 * Y - 0.344 * (U - 128) - 0.714 * (V - 128));
+                        // char B =  (char)(1.0 * Y + 1.772 * (U - 128));
+
+                        char R = Y;
+                        char G = Y;
+                        char B = Y;
+
+                        if (R < 0)
+                                R = 0;
+                        if (G < 0)
+                                G = 0;
+                        if (B < 0)
+                                B = 0;
+                        if (R > 255)
+                                R = 255;
+                        if (G > 255)
+                                G = 255;
+                        if (B > 255)
+                                B = 255;
+                        //printf("R = %X,  G = %X,  B = %X\n", R, G, B);
+
+                        RGBmap[i * width + j] = ((uint32_t)B << 16) | ((uint32_t)G << 8) | ((uint32_t)R);
+                        //printf("0x%06X\n", RGBmap[i * width + j]);
+                }
+        }
+        return RGBmap;
 }
 
 static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
@@ -478,6 +548,32 @@ static inline void __setpixel(union multiptr loc, uint32_t xormode, uint32_t col
         }
 }
 
+void put_rgb_map(int x, int y, uint32_t *rgbmap, int width, int height)
+{
+        uint32_t xormode;
+        union multiptr loc;
+        int i, j, x_pixel, y_pixel;
+
+        printf("putting rgb\n");
+        for (i = 0; i < height; i++)
+        {
+                for (j = 0; j < width; j++)
+                {
+                        x_pixel = x + j;
+                        y_pixel = y + i;
+
+                        if ((x_pixel < 0) || (x_pixel >= 1024) || (y_pixel < 0) || (y_pixel >= 600))
+                        {
+                                printf("pixel lacation out of range!\n");
+                                continue;
+                        }
+
+                        __pixel_loc(x_pixel, y_pixel, &loc);
+                        __setpixel(loc, 0, rgbmap[i * width + j]);
+                }
+        }
+}
+
 void pixel(int32_t x, int32_t y, uint32_t colidx)
 {
         uint32_t xormode;
@@ -498,7 +594,6 @@ void pixel(int32_t x, int32_t y, uint32_t colidx)
 #endif
                 return;
         }
-
         __pixel_loc(x, y, &loc);
         __setpixel(loc, xormode, colormap[colidx]);
 }
