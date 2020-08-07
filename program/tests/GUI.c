@@ -352,8 +352,8 @@ int main(int argc, char **argv)
                                                         //         printf("Create pthread error!\n");
                                                         //         exit(1);
                                                         // }
-                                                        //read_camera();
-                                                        open_yuv("/mnt/frame/test.yuv");
+                                                        read_camera();
+                                                        //open_yuv("/mnt/frame/test.yuv");
                                                 }
                                                 else
                                                 {

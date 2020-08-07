@@ -565,7 +565,7 @@ void put_rgb_map(int x, int y, uint32_t *rgbmap, int width, int height)
                         if ((x_pixel < 0) || (x_pixel >= 1024) || (y_pixel < 0) || (y_pixel >= 600))
                         {
                                 printf("pixel lacation out of range!\n");
-                                continue;
+                                return;
                         }
 
                         __pixel_loc(x_pixel, y_pixel, &loc);

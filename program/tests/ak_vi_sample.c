@@ -29,12 +29,14 @@
 #include "ak_log.h"
 #include "ak_tde.h"
 
+#include "fbutils.h"
+
 #define LEN_HINT 512
 #define LEN_OPTION_SHORT 512
 #define DEF_FRAME_DEPTH 3
 #define RES_GROUP 6
 
-int frame_num = 1;
+int frame_num = 0;//=0时连续拍摄
 int channel_num = 0;
 char *isp_path = "/etc/jffs2/isp_ar0230_dvp.conf";
 char *save_path = "/mnt/frame/";
@@ -138,13 +140,15 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 {
         int count = 0;
         struct video_input_frame frame;
+        unsigned char *yuvbuf = NULL;
+        uint32_t *RGBmap;
 
         ak_print_normal(MODULE_ID_VI, "capture start\n");
 
         /*
 	 * To get frame by loop
 	 */
-        while (count < number)
+        while (count < number || number == 0)
         {
                 memset(&frame, 0x00, sizeof(frame));
 
@@ -157,13 +161,17 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 			 * Here, you can implement your code to use this frame.
 			 * Notice, do not occupy it too long.
 			 */
-                        ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn yuv len: %u\n", count, frame.vi_frame.len);
-                        ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn phyaddr: %lu\n", count, frame.phyaddr);
+                        // ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn yuv len: %u\n", count, frame.vi_frame.len);
+                        // ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn phyaddr: %lu\n", count, frame.phyaddr);
 
-                        if (channel_num == VIDEO_CHN0)
-                                save_yuv_data(save_path, count, &frame, attr);
-                        else
-                                save_yuv_data(save_path, count, &frame, attr_sub);
+                        yuvbuf = frame.vi_frame.data;
+                        RGBmap = yuv420_to_rgb(yuvbuf, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
+
+                        // if (channel_num == VIDEO_CHN0)
+                        //         save_yuv_data(save_path, count, &frame, attr);
+                        // else
+                        //         save_yuv_data(save_path, count, &frame, attr_sub);
 
                         /* 
 			 * in this context, this frame was useless,
@@ -174,7 +182,6 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
                 }
                 else
                 {
-
                         /* 
 			 *	If getting too fast, it will have no data,
 			 *	just take breath.
