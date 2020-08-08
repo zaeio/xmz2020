@@ -554,7 +554,7 @@ void put_rgb_map(int x, int y, uint32_t *rgbmap, int width, int height)
         union multiptr loc;
         int i, j, x_pixel, y_pixel;
 
-        printf("putting rgb\n");
+        // printf("putting rgb\n");
         for (i = 0; i < height; i++)
         {
                 for (j = 0; j < width; j++)

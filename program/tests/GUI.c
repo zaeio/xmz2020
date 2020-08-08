@@ -24,8 +24,8 @@
 #define STATE_WELCOME 0
 #define STATE_CALL 1
 #define STATE_NUM_ERROR 2
-#define FRAME_WIDTH 640  //585
-#define FRAME_HEIGHT 480 //600
+#define FRAME_WIDTH 640  //584, 640
+#define FRAME_HEIGHT 480 //600, 480
 // #define XRES 1024
 // #define YRES 600
 
@@ -222,6 +222,7 @@ void open_yuv(char *filename)
                 return;
         }
         put_rgb_map(0, 0, RGBmap, FRAME_WIDTH, FRAME_HEIGHT);
+        free(YUVmap);
 }
 
 int main(int argc, char **argv)

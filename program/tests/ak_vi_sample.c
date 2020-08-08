@@ -36,11 +36,11 @@
 #define DEF_FRAME_DEPTH 3
 #define RES_GROUP 6
 
-int frame_num = 0;//=0时连续拍摄
+int frame_num = 0; //=0时连续拍摄
 int channel_num = 0;
 char *isp_path = "/etc/jffs2/isp_ar0230_dvp.conf";
 char *save_path = "/mnt/frame/";
-int main_res_id = 1; //used resolution
+int main_res_id = 5; //used resolution
 int sub_res_id = 0;
 
 /* support resolution list */
@@ -50,7 +50,14 @@ int res_group[RES_GROUP][2] = {
     {1280, 720},  /*   720P  */
     {960, 1080},  /*   1080i */
     {1920, 1080}, /*   1080P */
-    {585, 600}};
+    {608, 600}};
+
+struct show_frame_param
+{
+        unsigned char *yuvdata;
+        int width;
+        int height;
+};
 
 /* 
  * check_dir: check whether the 'path' was exist.
@@ -126,6 +133,16 @@ static void save_yuv_data(const char *path, int index,
         }
 }
 
+void show_frame(void *arg)
+{
+        uint32_t *RGBmap;
+        struct show_frame_param *param;
+        param = (struct show_frame_para *)arg;
+
+        RGBmap = yuv420_to_rgb(param->yuvdata, param->width, param->height);
+        put_rgb_map(0, 0, RGBmap, param->width, param->height);
+}
+
 /*
  * vi_capture_loop: loop to get and release yuv, between get and release,
  *                  here we just save the frame to file, on your platform,
@@ -140,8 +157,10 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 {
         int count = 0;
         struct video_input_frame frame;
-        unsigned char *yuvbuf = NULL;
+        // int thread_read_flag = 0;
         uint32_t *RGBmap;
+        // pthread_t thID_showframe;
+        // struct show_frame_param param;
 
         ak_print_normal(MODULE_ID_VI, "capture start\n");
 
@@ -161,12 +180,19 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 			 * Here, you can implement your code to use this frame.
 			 * Notice, do not occupy it too long.
 			 */
-                        // ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn yuv len: %u\n", count, frame.vi_frame.len);
-                        // ak_print_normal_ex(MODULE_ID_VI, "[%d] main chn phyaddr: %lu\n", count, frame.phyaddr);
 
-                        yuvbuf = frame.vi_frame.data;
-                        RGBmap = yuv420_to_rgb(yuvbuf, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        // param.yuvdata = frame.vi_frame.data;
+                        // param.width = res_group[main_res_id][0];
+                        // param.height = res_group[main_res_id][1];
+                        // if (pthread_create(&thID_showframe, NULL, (void *)show_frame, &param) != 0)
+                        // {
+                        //         printf("Create pthread error!\n");
+                        //         exit(1);
+                        // }
+
+                        RGBmap = yuv420_to_rgb(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
                         put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        free(RGBmap);
 
                         // if (channel_num == VIDEO_CHN0)
                         //         save_yuv_data(save_path, count, &frame, attr);
@@ -186,7 +212,7 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
 			 *	If getting too fast, it will have no data,
 			 *	just take breath.
 			 */
-                        ak_print_normal_ex(MODULE_ID_VI, "get frmae failed!\n");
+                        printf("get frmae failed! sleep 10ms\n");
                         ak_sleep_ms(10);
                 }
         }
