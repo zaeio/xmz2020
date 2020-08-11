@@ -344,7 +344,7 @@ int main(int argc, char **argv)
                                                 int floor, num;
                                                 floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
                                                 num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
-                                                if (floor > 0 && floor <= 10 && num > 0 && num <= 4)
+                                                if (floor > 0 && floor <= 20 && num > 0 && num <= 9)
                                                 {
                                                         current_state = STATE_CALL;
                                                         print_usage_info();
@@ -353,8 +353,11 @@ int main(int argc, char **argv)
                                                         //         printf("Create pthread error!\n");
                                                         //         exit(1);
                                                         // }
-                                                        read_camera();
+                                                        //read_camera();
                                                         //open_yuv("/mnt/frame/test.yuv");
+
+                                                        ak_aio_init();
+                                                        audio_get_frame(3);
                                                 }
                                                 else
                                                 {

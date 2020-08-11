@@ -170,12 +170,14 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__GUI_SOURCES_DIST = GUI.c testutils.c testutils.h fbutils.h \
 	font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c \
-	video.h ak_vi.h ak_vi_sample.c fbutils-bsd.c fbutils-linux.c
+	video.h ak_vi.h ak_vi_sample.c avio.c ak_ai_sample.c \
+	ak_ao_sample.c fbutils-bsd.c fbutils-linux.c
 #am__objects_1 = fbutils-bsd.$(OBJEXT)
 am__objects_2 = fbutils-linux.$(OBJEXT)
 am_GUI_OBJECTS = GUI.$(OBJEXT) testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
 	font_8x16.$(OBJEXT) font_big.$(OBJEXT) video.$(OBJEXT) \
-	ak_vi_sample.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+	ak_vi_sample.$(OBJEXT) avio.$(OBJEXT) ak_ai_sample.$(OBJEXT) \
+	ak_ao_sample.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 GUI_OBJECTS = $(am_GUI_OBJECTS)
 am__DEPENDENCIES_1 =
 GUI_DEPENDENCIES = $(top_builddir)/src/libts.la $(am__DEPENDENCIES_1) \
@@ -469,7 +471,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 ak_lib = /home/bk/sdk_release_dir/platform/lib
 GUI_SOURCES = GUI.c testutils.c testutils.h fbutils.h font_8x8.c \
 	font_8x16.c font.h font_big.c font_big.h video.c video.h \
-	ak_vi.h ak_vi_sample.c $(am__append_1) $(am__append_2)
+	ak_vi.h ak_vi_sample.c avio.c ak_ai_sample.c ak_ao_sample.c \
+	$(am__append_1) $(am__append_2)
 GUI_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS) $(ak_lib)/*.so 
 ts_test_mt_SOURCES = ts_test_mt.c testutils.c testutils.h \
 	fbutils.h font_8x8.c font_8x16.c font.h font_big.c \
@@ -655,7 +658,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 #include ./$(DEPDIR)/GUI.Po
+#include ./$(DEPDIR)/ak_ai_sample.Po
+#include ./$(DEPDIR)/ak_ao_sample.Po
 #include ./$(DEPDIR)/ak_vi_sample.Po
+#include ./$(DEPDIR)/avio.Po
 #include ./$(DEPDIR)/fbutils-bsd.Po
 #include ./$(DEPDIR)/fbutils-linux.Po
 #include ./$(DEPDIR)/font_8x16.Po
