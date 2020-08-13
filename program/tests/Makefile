@@ -169,15 +169,16 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__GUI_SOURCES_DIST = GUI.c testutils.c testutils.h fbutils.h \
-	font_8x8.c font_8x16.c font.h font_big.c font_big.h video.c \
-	video.h ak_vi.h ak_vi_sample.c avio.c ak_ai_sample.c \
-	ak_ao_sample.c fbutils-bsd.c fbutils-linux.c
+	font_8x8.c font_8x16.c font.h font_big.c font_big.h ak_vi.h \
+	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c ak_venc.h \
+	ak_venc_sample.c rtp1.c rtp1.h fbutils-bsd.c fbutils-linux.c
 #am__objects_1 = fbutils-bsd.$(OBJEXT)
 am__objects_2 = fbutils-linux.$(OBJEXT)
 am_GUI_OBJECTS = GUI.$(OBJEXT) testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
-	font_8x16.$(OBJEXT) font_big.$(OBJEXT) video.$(OBJEXT) \
-	ak_vi_sample.$(OBJEXT) avio.$(OBJEXT) ak_ai_sample.$(OBJEXT) \
-	ak_ao_sample.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+	font_8x16.$(OBJEXT) font_big.$(OBJEXT) ak_vi_sample.$(OBJEXT) \
+	ak_ai_sample.$(OBJEXT) ak_ao_sample.$(OBJEXT) \
+	ak_venc_sample.$(OBJEXT) rtp1.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
 GUI_OBJECTS = $(am_GUI_OBJECTS)
 am__DEPENDENCIES_1 =
 GUI_DEPENDENCIES = $(top_builddir)/src/libts.la $(am__DEPENDENCIES_1) \
@@ -470,9 +471,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 ##############################################
 ak_lib = /home/bk/sdk_release_dir/platform/lib
 GUI_SOURCES = GUI.c testutils.c testutils.h fbutils.h font_8x8.c \
-	font_8x16.c font.h font_big.c font_big.h video.c video.h \
-	ak_vi.h ak_vi_sample.c avio.c ak_ai_sample.c ak_ao_sample.c \
-	$(am__append_1) $(am__append_2)
+	font_8x16.c font.h font_big.c font_big.h ak_vi.h \
+	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c ak_venc.h \
+	ak_venc_sample.c rtp1.c rtp1.h $(am__append_1) $(am__append_2)
 GUI_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS) $(ak_lib)/*.so 
 ts_test_mt_SOURCES = ts_test_mt.c testutils.c testutils.h \
 	fbutils.h font_8x8.c font_8x16.c font.h font_big.c \
@@ -660,13 +661,14 @@ distclean-compile:
 #include ./$(DEPDIR)/GUI.Po
 #include ./$(DEPDIR)/ak_ai_sample.Po
 #include ./$(DEPDIR)/ak_ao_sample.Po
+#include ./$(DEPDIR)/ak_venc_sample.Po
 #include ./$(DEPDIR)/ak_vi_sample.Po
-#include ./$(DEPDIR)/avio.Po
 #include ./$(DEPDIR)/fbutils-bsd.Po
 #include ./$(DEPDIR)/fbutils-linux.Po
 #include ./$(DEPDIR)/font_8x16.Po
 #include ./$(DEPDIR)/font_8x8.Po
 #include ./$(DEPDIR)/font_big.Po
+#include ./$(DEPDIR)/rtp1.Po
 #include ./$(DEPDIR)/sdlutils.Po
 #include ./$(DEPDIR)/testutils.Po
 #include ./$(DEPDIR)/ts_calibrate.Po
@@ -682,7 +684,6 @@ distclean-compile:
 #include ./$(DEPDIR)/ts_test_mt.Po
 #include ./$(DEPDIR)/ts_test_mt_sdl.Po
 #include ./$(DEPDIR)/ts_verify.Po
-#include ./$(DEPDIR)/video.Po
 
 .c.o:
 #	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

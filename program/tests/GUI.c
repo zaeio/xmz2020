@@ -15,11 +15,13 @@
 
 #include "ak_common.h"
 #include "ak_common_graphics.h"
-#include "ak_vo.h"
+// #include "ak_vo.h"
 #include "ak_vi.h"
+#include "ak_ai.h"
 #include "ak_mem.h"
 #include "ak_log.h"
-#include "ak_tde.h"
+// #include "ak_tde.h"
+#include "ak_venc.h"
 
 #define STATE_WELCOME 0
 #define STATE_CALL 1
@@ -29,7 +31,9 @@
 // #define XRES 1024
 // #define YRES 600
 
-int read_camera();
+#define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
+#define NR_BUTTONS 12 //按钮数量
+#define TEXTBOXES_NUM 1
 
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
@@ -38,15 +42,15 @@ static int palette[] = {
     0xF9F9F9, 0xC0C0C0,  // 数字键未激活2、激活色3
     0xEEEEEE, 0xC0C0C0}; //其他键未激活4、激活色5
 
-#define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
-#define NR_BUTTONS 12 //按钮数量
-#define TEXTBOXES_NUM 1
-
 int current_state = STATE_WELCOME;           //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
-int PRINT_TIME_FLAG = -1;
+
+extern int record_enable; //按下按键录音
+extern int vi_capture_enable;
+int ai_handle_id = -1;
+int ao_handle_id = -1;
 
 static void sig(int sig)
 {
@@ -228,60 +232,14 @@ void open_yuv(char *filename)
 int main(int argc, char **argv)
 {
         struct tsdev *ts;
-        int x, y;
+        // int x, y;
         unsigned int i;
         unsigned int mode = 0;
-        int quit_pressed = 0;
-
-        pthread_t thID_dot;
+        pthread_t vi_thread;
 
         signal(SIGSEGV, sig); //这三个是程序中断退出信号
         signal(SIGINT, sig);  //按Ctrl+c退出程序
         signal(SIGTERM, sig); //kill(1)终止
-
-        while (1)
-        {
-                const struct option long_options[] = {
-                    {"help", no_argument, NULL, 'h'},
-                    {"rotate", required_argument, NULL, 'r'},
-                    {"version", no_argument, NULL, 'v'},
-                };
-
-                int option_index = 0;
-                int c = getopt_long(argc, argv, "hvr:", long_options, &option_index);
-
-                errno = 0;
-                if (c == -1)
-                        break;
-
-                switch (c)
-                {
-                case 'v':
-                        print_version();
-                        return 0;
-
-                case 'r':
-                        /* extern in fbutils.h */
-                        rotation = atoi(optarg);
-                        if (rotation < 0 || rotation > 3)
-                        {
-                                return 0;
-                        }
-                        break;
-
-                default:
-                        return 0;
-                }
-
-                if (errno)
-                {
-                        char str[9];
-
-                        sprintf(str, "option ?");
-                        str[7] = c & 0xff;
-                        perror(str);
-                }
-        }
 
         ts = ts_setup(NULL, 0);
         if (!ts)
@@ -297,13 +255,16 @@ int main(int argc, char **argv)
                 exit(1);
         }
 
-        x = xres / 2;
-        y = yres / 2;
+        // x = xres / 2;
+        // y = yres / 2;
 
         for (i = 0; i < NR_COLORS; i++)
                 setcolor(i, palette[i]);
 
         init_widget();
+        ai_handle_id = ak_ai_init();
+        ao_handle_id = ak_ao_init();
+        ak_vi_init();
 
         while (1)
         {
@@ -311,15 +272,15 @@ int main(int argc, char **argv)
                 int ret;
 
                 /* Show the cross */
-                if ((mode & 15) != 1)
-                        put_cross(x, y, 4 | XORMODE);
+                // if ((mode & 15) != 1)
+                //         put_cross(x, y, 4 | XORMODE);
 
                 ret = ts_read(ts, &samp, 1);
                 samp.x = xres - samp.x;
 
                 /* Hide it */
-                if ((mode & 15) != 1)
-                        put_cross(x, y, 4 | XORMODE);
+                // if ((mode & 15) != 1)
+                //         put_cross(x, y, 4 | XORMODE);
 
                 if (ret < 0)
                 {
@@ -334,7 +295,9 @@ int main(int argc, char **argv)
 
                 //按钮事件
                 for (i = 0; i < NR_BUTTONS; i++)
+                {
                         if (button_handle(&buttons[i], samp.x, samp.y, samp.pressure))
+                        {
                                 switch (i)
                                 {
                                 case 10: //#
@@ -344,6 +307,7 @@ int main(int argc, char **argv)
                                                 int floor, num;
                                                 floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
                                                 num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
+
                                                 if (floor > 0 && floor <= 20 && num > 0 && num <= 9)
                                                 {
                                                         current_state = STATE_CALL;
@@ -353,11 +317,16 @@ int main(int argc, char **argv)
                                                         //         printf("Create pthread error!\n");
                                                         //         exit(1);
                                                         // }
-                                                        //read_camera();
-                                                        //open_yuv("/mnt/frame/test.yuv");
 
-                                                        ak_aio_init();
-                                                        audio_get_frame(3);
+                                                        // read_camera();
+                                                        //open_yuv("/mnt/frame/test.yuv");
+                                                        vi_capture_enable = 1;
+                                                        if (pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL) != 0)
+                                                        {
+                                                                printf("Create vi_capture thread error!\n");
+                                                                exit(1);
+                                                        }
+                                                        // venc_rtp();
                                                 }
                                                 else
                                                 {
@@ -368,8 +337,10 @@ int main(int argc, char **argv)
                                         else if (current_state == STATE_CALL)
                                         {
                                                 current_state = STATE_WELCOME;
-                                                pthread_cancel(thID_dot);
-                                                print_usage_info();
+                                                vi_capture_enable = 0;
+                                                pthread_cancel(vi_thread);
+                                                refresh_screen();
+                                                // print_usage_info();
                                         }
                                 }
                                 break;
@@ -390,21 +361,20 @@ int main(int argc, char **argv)
                                         }
                                         break;
                                 }
+                        }
+                }
 
                 //printf("%ld.%06ld: %6d %6d %6d\n", samp.tv.tv_sec, samp.tv.tv_usec, samp.x, samp.y, samp.pressure);
-
-                if (samp.pressure > 0)
-                {
-                        if (mode == 0x80000001)
-                                line(x, y, samp.x, samp.y, 2);
-                        x = samp.x;
-                        y = samp.y;
-                        mode |= 0x80000000;
-                }
-                else
-                        mode &= ~0x80000000;
-                if (quit_pressed)
-                        break;
+                // if (samp.pressure > 0)
+                // {
+                //         if (mode == 0x80000001)
+                //                 line(x, y, samp.x, samp.y, 2);
+                //         x = samp.x;
+                //         y = samp.y;
+                //         mode |= 0x80000000;
+                // }
+                // else
+                //         mode &= ~0x80000000;
         }
         fillrect(0, 0, xres - 1, yres - 1, 0);
         close_framebuffer();

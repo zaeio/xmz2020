@@ -23,11 +23,11 @@
 
 #include "ak_common.h"
 #include "ak_common_graphics.h"
-#include "ak_vo.h"
+// #include "ak_vo.h"
 #include "ak_vi.h"
 #include "ak_mem.h"
 #include "ak_log.h"
-#include "ak_tde.h"
+// #include "ak_tde.h"
 
 #include "fbutils.h"
 
@@ -36,12 +36,16 @@
 #define DEF_FRAME_DEPTH 3
 #define RES_GROUP 6
 
+VI_CHN_ATTR chn_attr;     //main channel attribute
+VI_CHN_ATTR chn_attr_sub; //sub channel attribute
+
 int frame_num = 0; //=0时连续拍摄
 int channel_num = 0;
 char *isp_path = "/etc/jffs2/isp_ar0230_dvp.conf";
-char *save_path = "/mnt/frame/";
+// char *save_path = "/mnt/frame/";
 int main_res_id = 5; //used resolution
 int sub_res_id = 0;
+int vi_capture_enable = 0;
 
 /* support resolution list */
 int res_group[RES_GROUP][2] = {
@@ -152,35 +156,32 @@ void show_frame(void *arg)
  * path[IN]:   save directory path, if NULL, will not save anymore.
  * attr[IN]:   vi channel attribute.
  */
-static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
-                            VI_CHN_ATTR *attr, VI_CHN_ATTR *attr_sub)
+
+/*static void vi_capture_loop(VI_DEV dev_id, int number, VI_CHN_ATTR *attr, VI_CHN_ATTR *attr_sub)
 {
         int count = 0;
         struct video_input_frame frame;
-        // int thread_read_flag = 0;
         uint32_t *RGBmap;
+        // int thread_read_flag = 0;
         // pthread_t thID_showframe;
         // struct show_frame_param param;
 
         ak_print_normal(MODULE_ID_VI, "capture start\n");
 
-        /*
-	 * To get frame by loop
-	 */
+	//To get frame by loop
+	 
         while (count < number || number == 0)
         {
                 memset(&frame, 0x00, sizeof(frame));
 
-                /* to get frame according to the channel number */
+                //to get frame according to the channel number 
                 int ret = ak_vi_get_frame(channel_num, &frame);
 
                 if (!ret)
                 {
-                        /* 
-			 * Here, you can implement your code to use this frame.
-			 * Notice, do not occupy it too long.
-			 */
-
+                        
+			 //Here, you can implement your code to use this frame.Notice, do not occupy it too long.
+			 
                         // param.yuvdata = frame.vi_frame.data;
                         // param.width = res_group[main_res_id][0];
                         // param.height = res_group[main_res_id][1];
@@ -199,25 +200,51 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
                         // else
                         //         save_yuv_data(save_path, count, &frame, attr_sub);
 
-                        /* 
-			 * in this context, this frame was useless,
-			 * release frame data
-			 */
                         ak_vi_release_frame(channel_num, &frame);
                         count++;
                 }
                 else
                 {
-                        /* 
-			 *	If getting too fast, it will have no data,
-			 *	just take breath.
-			 */
+                        
+			 //If getting too fast, it will have no data,just take breath.
+			 
                         printf("get frmae failed! sleep 10ms\n");
                         ak_sleep_ms(10);
                 }
         }
 
         ak_print_normal(MODULE_ID_VI, "capture finish\n\n");
+}*/
+
+void vi_capture_loop()
+{
+        struct video_input_frame frame;
+        uint32_t *RGBmap;
+
+        printf("capture start\n");
+
+        while (vi_capture_enable)
+        {
+                memset(&frame, 0x00, sizeof(frame));
+
+                //to get frame according to the channel number
+                int ret = ak_vi_get_frame(channel_num, &frame);
+
+                if (!ret)
+                {
+                        RGBmap = yuv420_to_rgb(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
+
+                        free(RGBmap);
+                        ak_vi_release_frame(channel_num, &frame);
+                }
+                else
+                {
+                        printf("get frmae failed! sleep 10ms\n");
+                        ak_sleep_ms(10);
+                }
+        }
+        printf("capture finish\n");
 }
 
 /**
@@ -228,7 +255,7 @@ static void vi_capture_loop(VI_DEV dev_id, int number, const char *path,
  * 4??your main video progress must stop
  */
 //int main(int argc, char **argv)
-int read_camera()
+int ak_vi_init()
 {
         /* start the application */
         sdk_run_config config;
@@ -236,11 +263,11 @@ int read_camera()
         ak_sdk_init(&config);
 
         /*check the data save path */
-        if (check_dir(save_path) == 0)
-        {
-                ak_print_error_ex(MODULE_ID_VI, "save path is not existed!\n");
-                return 0;
-        }
+        // if (check_dir(save_path) == 0)
+        // {
+        //         ak_print_error_ex(MODULE_ID_VI, "save path is not existed!\n");
+        //         return 0;
+        // }
 
         /* 
 	 * step 0: global value initialize
@@ -318,7 +345,6 @@ int read_camera()
         /*
 	 * step 5: set main channel attribute
 	 */
-        VI_CHN_ATTR chn_attr;
         chn_attr.chn_id = VIDEO_CHN0;
         chn_attr.res.width = width;
         chn_attr.res.height = height;
@@ -337,7 +363,7 @@ int read_camera()
         /*
 	 * step 6: set sub channel attribute
 	 */
-        VI_CHN_ATTR chn_attr_sub;
+
         chn_attr_sub.chn_id = VIDEO_CHN1;
         chn_attr_sub.res.width = subwidth;
         chn_attr_sub.res.height = subheight;
@@ -389,18 +415,26 @@ int read_camera()
         /* 
 	 * step 10: start to capture and save yuv frames 
 	 */
-        vi_capture_loop(VIDEO_DEV0, frame_num, save_path, &chn_attr, &chn_attr_sub);
+        // vi_capture_loop(VIDEO_DEV0, frame_num, &chn_attr, &chn_attr_sub);
 
         /*
 	 * step 11: release resource
 	 */
-        ak_vi_disable_chn(VIDEO_CHN0);
-        ak_vi_disable_chn(VIDEO_CHN1);
-        ak_vi_disable_dev(VIDEO_DEV0);
-        ret = ak_vi_close(VIDEO_DEV0);
+        // ak_vi_disable_chn(VIDEO_CHN0);
+        // ak_vi_disable_chn(VIDEO_CHN1);
+        // ak_vi_disable_dev(VIDEO_DEV0);
+        // ret = ak_vi_close(VIDEO_DEV0);
 
 exit:
         /* exit */
         ak_print_normal(MODULE_ID_VI, "exit vi demo\n");
         return ret;
+}
+
+void ak_vi_disable()
+{
+        ak_vi_disable_chn(VIDEO_CHN0);
+        ak_vi_disable_chn(VIDEO_CHN1);
+        ak_vi_disable_dev(VIDEO_DEV0);
+        ak_vi_close(VIDEO_DEV0);
 }
