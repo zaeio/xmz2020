@@ -93,8 +93,7 @@ static int check_dir(const char *path)
  * frame[IN]: pointer to yuv data, include main and sub channel data
  * attr[IN]:  vi channel attribute.
  */
-static void save_yuv_data(const char *path, int index,
-                          struct video_input_frame *frame, VI_CHN_ATTR *attr)
+static void save_yuv_data(const char *path, int index, struct video_input_frame *frame, VI_CHN_ATTR *attr)
 {
         FILE *fd = NULL;
         unsigned int len = 0;
@@ -221,7 +220,7 @@ void vi_capture_loop()
         struct video_input_frame frame;
         uint32_t *RGBmap;
 
-        printf("capture start\n");
+        printf("*** vi capture start ***\n");
 
         while (vi_capture_enable)
         {
@@ -244,7 +243,7 @@ void vi_capture_loop()
                         ak_sleep_ms(10);
                 }
         }
-        printf("capture finish\n");
+        printf("*** vi capture finish ***\n");
 }
 
 /**
