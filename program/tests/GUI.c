@@ -15,12 +15,11 @@
 
 #include "ak_common.h"
 #include "ak_common_graphics.h"
-// #include "ak_vo.h"
 #include "ak_vi.h"
 #include "ak_ai.h"
+#include "ak_ao.h"
 #include "ak_mem.h"
 #include "ak_log.h"
-// #include "ak_tde.h"
 #include "ak_venc.h"
 
 #define STATE_WELCOME 0
@@ -47,10 +46,10 @@ static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
 
-extern int record_enable; //按下按键录音
-extern int vi_capture_enable;
-int ai_handle_id = -1;
-int ao_handle_id = -1;
+extern int ai_capture_enable; //录音持续使能
+extern int vi_capture_enable; //摄像持续使能
+extern int ai_handle_id;
+extern int ao_handle_id;
 
 static void sig(int sig)
 {
@@ -235,7 +234,7 @@ int main(int argc, char **argv)
         // int x, y;
         unsigned int i;
         unsigned int mode = 0;
-        pthread_t vi_thread;
+        pthread_t vi_thread, ai_thread;
 
         signal(SIGSEGV, sig); //这三个是程序中断退出信号
         signal(SIGINT, sig);  //按Ctrl+c退出程序
@@ -318,14 +317,17 @@ int main(int argc, char **argv)
                                                         //         exit(1);
                                                         // }
 
-                                                        // read_camera();
-                                                        //open_yuv("/mnt/frame/test.yuv");
-                                                        vi_capture_enable = 1;
-                                                        if (pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL) != 0)
-                                                        {
-                                                                printf("Create vi_capture thread error!\n");
-                                                                exit(1);
-                                                        }
+                                                        // open_yuv("/mnt/frame/test.yuv");
+
+                                                        // vi_capture_enable = 1;
+                                                        // if (pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL) != 0)
+                                                        // {
+                                                        //         printf("Create vi_capture thread error!\n");
+                                                        //         exit(1);
+                                                        // }
+
+                                                        ai_capture_enable = 1;
+                                                        pthread_create(&ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id)
                                                         // venc_rtp();
                                                 }
                                                 else
@@ -338,7 +340,11 @@ int main(int argc, char **argv)
                                         {
                                                 current_state = STATE_WELCOME;
                                                 vi_capture_enable = 0;
-                                                pthread_cancel(vi_thread);
+                                                ai_capture_enable = 0;
+                                                // pthread_cancel(vi_thread);
+                                                // pthread_cancel(ai_thread);
+                                                read_pcm(3);
+
                                                 refresh_screen();
                                                 // print_usage_info();
                                         }

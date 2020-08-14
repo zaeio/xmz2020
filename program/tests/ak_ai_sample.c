@@ -19,12 +19,13 @@
 #define LEN_HINT 512
 #define LEN_OPTION_SHORT 512
 
-FILE *fp = NULL;
+FILE *fp_pcm_i = NULL;
 int sample_rate = 8000; //8000 12000 11025 16000 22050 24000 32000 44100 48000
 int volume = 6;
 int save_time = 20000;              // set save time(ms)
 char *ai_save_path = "/mnt/frame/"; // set save path
-int record_enable = 0;              //按下按键录音
+int ai_capture_enable = 0;          //按下按键录音
+int ai_handle_id = -1;
 // int channel_num = AUDIO_CHANNEL_MONO;//=1
 
 /*
@@ -126,33 +127,33 @@ static void create_pcm_file_name(const char *path, char *file_path, int sample_r
 /*
  * open_pcm_file: open pcm file.
  * path[IN]: pointer to the path which will be checking.
- * fp[OUT]: pointer of opened pcm file.
+ * fp_pcm_i[OUT]: pointer of opened pcm file.
  * return: void.
  */
-static void open_pcm_file(int sample_rate, int channel_num, const char *path, FILE **fp)
+static void open_pcm_file(const char *path)
 {
         /* create the pcm file name */
         char file_path[255];
-        create_pcm_file_name(path, file_path, sample_rate, channel_num);
+        if (0 == check_dir(path))
+        {
+                return;
+        }
+        sprintf(file_path, "%sak_ao_test.pcm", path);
 
         /* open file */
-        *fp = fopen(file_path, "w+b");
-        if (NULL == *fp)
+        fp_pcm_i = fopen(file_path, "w+b");
+        if (NULL == fp_pcm_i)
         {
-                ak_print_normal(MODULE_ID_AI, "open pcm file: %s error\n", file_path);
-        }
-        else
-        {
-                ak_print_normal(MODULE_ID_AI, "open pcm file: %s OK\n", file_path);
+                printf("open pcm file: %s error\n", file_path);
         }
 }
 
-static void close_pcm_file(FILE *fp)
+static void close_pcm_file(FILE *fp_pcm_i)
 {
-        if (NULL != fp)
+        if (NULL != fp_pcm_i)
         {
-                fclose(fp);
-                fp = NULL;
+                fclose(fp_pcm_i);
+                fp_pcm_i = NULL;
         }
 }
 
@@ -164,16 +165,23 @@ static void close_pcm_file(FILE *fp)
  * path[IN]: save directory path, if NULL, will not save anymore.
  * save_time[IN]: captured time of pcm data, unit is second.
  */
-void ai_capture_loop(int ai_handle_id, const char *path)
+void ai_capture_loop()
 {
         unsigned long long start_ts = 0; // use to save capture start time
         unsigned long long end_ts = 0;   // the last frame time
         struct frame frame = {0};
         int ret = AK_FAILED;
+        // int ai_handle_id = *(int *)arg;
+
+        open_pcm_file(ai_save_path);
+        if (fp_pcm_i == NULL)
+        {
+                printf("ERROR: pcm file is NULL\n");
+                return;
+        }
 
         printf("*** capture start ***\n");
-
-        while (record_enable)
+        while (ai_capture_enable)
         {
                 /* get the pcm data frame */
                 ret = ak_ai_get_frame(ai_handle_id, &frame, 0);
@@ -195,19 +203,18 @@ void ai_capture_loop(int ai_handle_id, const char *path)
                         ak_sleep_ms(10);
                         continue;
                 }
-                if (NULL != fp)
+                if (fwrite(frame.data, frame.len, 1, fp_pcm_i) < 0)
                 {
-                        if (fwrite(frame.data, frame.len, 1, fp) < 0)
-                        {
-                                ak_ai_release_frame(ai_handle_id, &frame);
-                                printf("write file error.\n");
-                                break;
-                        }
+                        ak_ai_release_frame(ai_handle_id, &frame);
+                        printf("write file error.\n");
+                        break;
                 }
+
                 ak_ai_release_frame(ai_handle_id, &frame);
         }
-        ak_ai_close(ai_handle_id);
-        printf("*** capture finish ***\n\n");
+        // ak_ai_close(ai_handle_id);
+        fclose(fp_pcm_i);
+        printf("*** capture finish ***\n");
 }
 
 int ak_ai_init()
@@ -217,8 +224,6 @@ int ak_ai_init()
         config.mem_trace_flag = SDK_RUN_DEBUG;
         int channel_num = 1;
         ak_sdk_init(&config);
-
-        open_pcm_file(sample_rate, channel_num, ai_save_path, &fp);
 
         int ret = -1;
 
@@ -230,7 +235,7 @@ int ak_ai_init()
         param.pcm_data_attr.channel_num = channel_num;           // channel number
         param.dev_id = 0;
 
-        int ai_handle_id = -1;
+        // int ai_handle_id = -1;
         if (ak_ai_open(&param, &ai_handle_id))
         {
                 ak_print_normal(MODULE_ID_AI, "*** ak_ai_open failed. ***\n");
@@ -292,7 +297,6 @@ int ak_ai_init()
                 ak_ai_close(ai_handle_id);
                 goto exit;
         }
-        return ai_handle_id;
 
         // ai_capture_loop(ai_handle_id, ai_save_path, save_time);
 
@@ -312,7 +316,21 @@ int ak_ai_init()
 
 exit:
         /* close file handle */
-        close_pcm_file(fp);
+        close_pcm_file(fp_pcm_i);
         ak_print_normal(MODULE_ID_AI, "******** exit ai demo ********\n");
         return ret;
+}
+
+void ak_ai_disable()
+{
+        if (ak_ai_stop_capture(ai_handle_id))
+        {
+                ak_print_error(MODULE_ID_AI, "*** ak_ai_stop_capture failed. ***\n");
+                ak_ai_close(ai_handle_id);
+        }
+
+        if (ak_ai_close(ai_handle_id))
+        {
+                ak_print_normal(MODULE_ID_AI, "*** ak_ai_close failed. ***\n");
+        }
 }

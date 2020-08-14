@@ -18,55 +18,63 @@
 // int sample_rate = 8000; //8000 12000 11025 16000 22050 24000 32000 44100 48000
 // int volume = 3;
 char *pcm_file = "/mnt/frame/ak_ao_test.pcm";
+int ao_handle_id = -1;
+FILE *fp_pcm_o = NULL;
 // int channel_num = AUDIO_CHANNEL_MONO;
 
 static FILE *open_pcm_file(const char *pcm_file)
 {
-        FILE *fp = fopen(pcm_file, "r");
-        if (NULL == fp)
+        FILE *fp_pcm_o = fopen(pcm_file, "r");
+        if (NULL == fp_pcm_o)
         {
-                printf("open pcm file err\n");
+                printf("open pcm file erro\n");
                 return NULL;
         }
         printf("open pcm file: %s OK\n", pcm_file);
-        return fp;
+        return fp_pcm_o;
 }
 
-
-static void read_pcm(int handle_id, FILE *fp, unsigned int volume)
+void read_pcm(unsigned int volume)
 {
         int read_len = 0;
         int send_len = 0;
         int total_len = 0;
         unsigned char data[4096] = {0};
 
-        ak_ao_set_speaker(handle_id, 1); //AUDIO_FUNC_ENABLE
-        ak_ao_set_gain(handle_id, 6);
-        ak_ao_set_volume(handle_id, volume);
-        ak_ao_clear_frame_buffer(handle_id);
-        ak_ao_set_dev_buf_size(handle_id, 4096); //AK_AUDIO_DEV_BUF_SIZE_4096
+        fp_pcm_o =  fopen(pcm_file, "r");
+        if (NULL == fp_pcm_o)
+        {
+                printf("open file error\n");
+                return -1;
+        }
+
+        ak_ao_set_speaker(ao_handle_id, 1); //AUDIO_FUNC_ENABLE
+        ak_ao_set_gain(ao_handle_id, 6);
+        ak_ao_set_volume(ao_handle_id, volume);
+        ak_ao_clear_frame_buffer(ao_handle_id);
+        ak_ao_set_dev_buf_size(ao_handle_id, 4096); //AK_AUDIO_DEV_BUF_SIZE_4096
 
         while (1)
         {
                 memset(data, 0x00, sizeof(data));
-                read_len = fread(data, sizeof(char), sizeof(data), fp);
+                read_len = fread(data, sizeof(char), sizeof(data), fp_pcm_o);
 
                 if (read_len > 0)
                 {
                         /* send frame and play */
-                        if (ak_ao_send_frame(handle_id, data, read_len, &send_len))
+                        if (ak_ao_send_frame(ao_handle_id, data, read_len, &send_len))
                         {
                                 printf("write pcm to DA error!\n");
                                 break;
                         }
                         total_len += send_len;
 
-                        print_playing_dot();
+                        // print_playing_dot();
                         ak_sleep_ms(10);
                 }
                 else if (0 == read_len)
                 {
-                        ak_ao_wait_play_finish(handle_id);
+                        ak_ao_wait_play_finish(ao_handle_id);
                         printf("read to the end of file\n");
 
                         break;
@@ -77,8 +85,11 @@ static void read_pcm(int handle_id, FILE *fp, unsigned int volume)
                         break;
                 }
         }
+        fclose(fp_pcm_o);
         /* disable speaker */
-        ak_ao_set_speaker(handle_id, 0);
+        // ak_ao_set_speaker(ao_handle_id, 0);
+        // ak_ao_close(ao_handle_id);
+        // ao_handle_id = -1;
 }
 
 int ak_ao_init()
@@ -90,15 +101,15 @@ int ak_ao_init()
         config.mem_trace_flag = SDK_RUN_DEBUG;
         ak_sdk_init(&config);
 
-        FILE *fp = NULL;
+        // FILE *fp_pcm_o = NULL;
         printf("default play path: /mnt/frame/ak_ao_test.pcm\n");
 
-        fp = open_pcm_file(pcm_file);
-        if (NULL == fp)
-        {
-                printf("open file error\n");
-                return -1;
-        }
+        // fp_pcm_o = open_pcm_file(pcm_file);
+        // if (NULL == fp_pcm_o)
+        // {
+        //         printf("open file error\n");
+        //         return -1;
+        // }
 
         struct ak_audio_out_param ao_param;
         ao_param.pcm_data_attr.sample_bits = 16;
@@ -107,7 +118,7 @@ int ak_ao_init()
         ao_param.dev_id = 0;
 
         /* open ao */
-        int ao_handle_id = -1;
+        // int ao_handle_id = -1;
         if (ak_ao_open(&ao_param, &ao_handle_id))
         {
                 printf("ao open error\n");
@@ -115,18 +126,17 @@ int ak_ao_init()
         }
 
         /* get pcm data,send to play */
-        //         write_da_pcm(ao_handle_id, fp, channel_num, volume);
+        //         read_pcm(ao_handle_id, fp_pcm_o, channel_num, volume);
 
         //         /* play finish,close pcm file */
-        //         if (NULL != fp)
+        //         if (NULL != fp_pcm_o)
         //         {
-        //                 fclose(fp);
-        //                 fp = NULL;
+        //                 fclose(fp_pcm_o);
+        //                 fp_pcm_o = NULL;
         //         }
 
         //         /* close ao */
         //         ak_ao_close(ao_handle_id);
         //         ao_handle_id = -1;
-
-        return ao_handle_id;
 }
+
