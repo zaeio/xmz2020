@@ -121,7 +121,7 @@ static void create_pcm_file_name(const char *path, char *file_path, int sample_r
         // ak_get_localdate(&date);
         // ak_date_to_string(&date, time_str);
         // sprintf(file_path, "%s%s_%d_%d.pcm", path, time_str, sample_rate, channel_num);
-        sprintf(file_path, "%sak_ao_test.pcm", path);
+        sprintf(file_path, "%audio_frame.pcm", path);
 }
 
 /*
@@ -138,7 +138,7 @@ static void open_pcm_file(const char *path)
         {
                 return;
         }
-        sprintf(file_path, "%sak_ao_test.pcm", path);
+        sprintf(file_path, "%saudio_frame.pcm", path);
 
         /* open file */
         fp_pcm_i = fopen(file_path, "w+b");
@@ -215,6 +215,7 @@ void ai_capture_loop()
         // ak_ai_close(ai_handle_id);
         fclose(fp_pcm_i);
         printf("*** capture finish ***\n");
+        pthread_exit(NULL);
 }
 
 int ak_ai_init()

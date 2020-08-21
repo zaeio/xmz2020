@@ -203,6 +203,7 @@ int ak_ao_print_runtime_status(int ao_handle_id);
 int ak_ao_close(int ao_handle_id);
 
 int ak_ao_init();
-void read_pcm(unsigned int volume);
+void read_pcm(unsigned int volume, char *pcmfilename);
+void play_bell_routine();
 
 #endif

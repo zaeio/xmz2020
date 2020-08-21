@@ -3,11 +3,14 @@ struct font_struct
         int width, height, bytes_per_line;
         int offset_num, offset_capital, offset_lower;
         int index_hash, index_star;
+        int index_answer, index_hangup;
+        int index_microphone, index_camera;
+        int index_lock;
 };
 
 unsigned char fontdata_24x24[12][72];
 unsigned char fontdata_48x48[1][288];
-unsigned char fontdata_64x64[12][512];
+unsigned char fontdata_64x64[17][512];
 
 extern struct font_struct font_vga_24x24, font_vga_64x64;
 

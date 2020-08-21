@@ -34,7 +34,7 @@ username : root
 password : anycloudv500  
 先运行`nfs_start.sh`，然后进行挂载，根据情况修改IP和主机目录。
 
-    mount -t nfs -o nolock 192.168.1.104:/home/nfs_share /mnt
+    mount -t nfs -o nolock 192.168.1.116:/home/bk/nfs-share /mnt
 
 交叉编译工具链`arm-anykav500-linux-uclibcgnueabi-gcc`
 

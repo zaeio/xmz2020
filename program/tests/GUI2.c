@@ -20,7 +20,7 @@
 #include "ak_ao.h"
 #include "ak_mem.h"
 #include "ak_log.h"
-// #include "ak_venc.h"
+#include "ak_venc.h"
 
 #define STATE_WELCOME 0
 #define STATE_CALL 1
@@ -31,23 +31,26 @@
 // #define YRES 600
 
 #define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
-#define NR_BUTTONS 12 //按钮数量
+#define NR_BUTTONS 5 //按钮数量
 #define TEXTBOXES_NUM 1
 
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
-    0xD5D5D5,            //背景色0、按钮边框色0
-    0x000000,            //字体色1
-    0xF9F9F9, 0xC0C0C0,  // 数字键未激活2、激活色3
-    0xEEEEEE, 0xC0C0C0}; //其他键未激活4、激活色5
+    0xD5D5D5,           //背景色0、按钮边框色0
+    0x000000,           //字体色黑色默认1
+    0xF9F9F9, 0xC0C0C0, // 数字键未激活2、激活色3
+    0xEEEEEE, 0xC0C0C0, //其他键未激活4、激活色5
+    0x00CC00, 0x00AA00, //绿色未激活6、绿色激活7
+    0x0033F9, 0x0022C9  //红色未激活8、红色激活9
+};
 
 int current_state = STATE_WELCOME;           //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
-struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
 
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
+extern int play_bell_flag;    //播放铃声使能
 extern int ai_handle_id;
 extern int ao_handle_id;
 
@@ -90,11 +93,8 @@ static void refresh_screen(void)
         int i;
 
         fillrect(0, 0, xres - 1, yres - 1, 0); //背景
-        put_const_string_center(xres / 7 * 2, 60, CS_48x48_sysname, 8, 48, 1);
-        print_usage_info();
-
-        for (i = 0; i < TEXTBOXES_NUM; i++)
-                textbox_draw(&textboxes[0]);
+        put_const_string_center(xres / 8 * 3, 60, CS_48x48_sysname, 8, 48, 1);
+        // print_usage_info();
 
         for (i = 0; i < NR_BUTTONS; i++)
                 button_draw(&buttons[i]);
@@ -105,59 +105,40 @@ void init_widget()
         int i, j;
 
         /* Initialize buttons */
-        int btn_number_w = xres / 7;
-        int btn_number_h = yres / 5;
+        int btn_w = xres / 8;
+        int btn_h = yres / 5;
 
         memset(&buttons, 0, sizeof(buttons));
         for (i = 0; i < NR_BUTTONS; i++)
         {
-                buttons[i].w = btn_number_w;
-                buttons[i].h = btn_number_h;
+                buttons[i].w = btn_w;
+                buttons[i].h = btn_h;
+                buttons[i].x = btn_w * 7;
                 buttons[i].fill_colidx[0] = 2;
                 buttons[i].fill_colidx[1] = 3;
                 buttons[i].border_colidx[0] = buttons[i].border_colidx[1] = 0;
                 buttons[i].font_colidx[0] = buttons[i].font_colidx[1] = 1;
         }
-        buttons[10].fill_colidx[0] = buttons[11].fill_colidx[0] = 4; //#*的颜色
-        buttons[10].fill_colidx[1] = buttons[11].fill_colidx[1] = 5;
 
-        buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
-        buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
-        buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = btn_number_w * 6;
+        buttons[0].text = "["; //接听
+        buttons[1].text = "]"; //挂断
+        buttons[2].text = "&"; //语音
+        buttons[3].text = "$"; //锁
+        buttons[4].text = "@"; //摄像头
 
-        buttons[7].y = buttons[8].y = buttons[9].y = btn_number_h;
-        buttons[4].y = buttons[5].y = buttons[6].y = btn_number_h * 2;
-        buttons[1].y = buttons[2].y = buttons[3].y = btn_number_h * 3;
-        buttons[10].y = buttons[0].y = buttons[11].y = btn_number_h * 4;
+        buttons[0].font_colidx[0] = buttons[0].font_colidx[1] = 2;
+        buttons[1].font_colidx[0] = buttons[1].font_colidx[1] = 2;
 
-        buttons[0].text = "0";
-        buttons[1].text = "1";
-        buttons[2].text = "2";
-        buttons[3].text = "3";
-        buttons[4].text = "4";
-        buttons[5].text = "5";
-        buttons[6].text = "6";
-        buttons[7].text = "7";
-        buttons[8].text = "8";
-        buttons[9].text = "9";
-        buttons[10].text = "#";
-        buttons[11].text = "*";
+        buttons[0].fill_colidx[0] = 6; //接听未激活
+        buttons[0].fill_colidx[1] = 7; //接听激活
+        buttons[1].fill_colidx[0] = 8; //挂断未激活
+        buttons[1].fill_colidx[1] = 9; //挂断激活
 
-        /* Initialize textboxes */
-        textboxes[0].x = xres / 7 * 4;
-        textboxes[0].y = 0;
-        textboxes[0].w = xres / 7 * 3;
-        textboxes[0].h = yres / 5;
-        textboxes[0].fill_colidx = 4;
-        textboxes[0].border_colidx = 0;
-
-        for (j = 0; j < TEXTBOXES_NUM; j++)
-        {
-                textboxes[j].text_cap = 4;
-                textboxes[j].font_colidx = 1;
-                for (i = 0; i <= textboxes[j].text_cap; i++, textboxes[j].text[i] = '\0')
-                        ;
-        }
+        buttons[0].y = btn_h * 3;
+        buttons[1].y = btn_h * 4;
+        buttons[2].y = btn_h * 2;
+        buttons[3].y = 0;
+        buttons[4].y = btn_h;
 
         refresh_screen();
 }
@@ -234,7 +215,7 @@ int main(int argc, char **argv)
         // int x, y;
         unsigned int i;
         unsigned int mode = 0;
-        pthread_t vi_thread, ai_thread;
+        pthread_t vi_thread, ai_thread, bell_thread;
 
         signal(SIGSEGV, sig); //这三个是程序中断退出信号
         signal(SIGINT, sig);  //按Ctrl+c退出程序
@@ -299,70 +280,63 @@ int main(int argc, char **argv)
                         {
                                 switch (i)
                                 {
-                                case 10: //#
+                                case 0: //[
                                 {
                                         if (current_state == STATE_WELCOME)
                                         {
-                                                int floor, num;
-                                                floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
-                                                num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
+                                                current_state = STATE_CALL;
+                                                // vi_capture_enable = 1;
+                                                // pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
 
-                                                if (floor > 0 && floor <= 20 && num > 0 && num <= 9)
-                                                {
-                                                        current_state = STATE_CALL;
-                                                        print_usage_info();
-                                                        // if (pthread_create(&thID_dot, NULL, (void *)waiting_dots, NULL) != 0)
-                                                        // {
-                                                        //         printf("Create pthread error!\n");
-                                                        //         exit(1);
-                                                        // }
-
-                                                        // open_yuv("/mnt/frame/test.yuv");
-
-                                                        // vi_capture_enable = 1;
-                                                        // pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
-
-                                                        ai_capture_enable = 1;
-                                                        pthread_create(&ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
-
-                                                        // setup_tcp();
-                                                        // send_pcm();
-                                                }
-                                                else
-                                                {
-                                                        current_state = STATE_NUM_ERROR;
-                                                        print_usage_info();
-                                                }
+                                                // play_bell_flag = 1;
+                                                // pthread_create(&bell_thread, NULL, (void *)play_bell_routine, NULL);
                                         }
                                         else if (current_state == STATE_CALL)
                                         {
                                                 current_state = STATE_WELCOME;
                                                 vi_capture_enable = 0;
-                                                ai_capture_enable = 0;
-                                                // pthread_cancel(vi_thread);
-                                                // pthread_cancel(ai_thread);
-                                                read_pcm(3, "/mnt/frame/audio_frame.pcm");
-
+                                                play_bell_flag = 0;
                                                 refresh_screen();
-                                                // print_usage_info();
                                         }
                                 }
                                 break;
-                                case 11: //删除
-                                        textbox_delchar(&textboxes[0]);
-                                        if (current_state == STATE_NUM_ERROR)
+                                case 1: //]
+                                {
+                                        current_state = STATE_WELCOME;
+                                        vi_capture_enable = 0;
+                                        play_bell_flag = 0;
+                                        refresh_screen();
+                                }
+                                break;
+                                case 2: //&语音
+                                {
+                                        if (ai_capture_enable == 0)
                                         {
-                                                current_state = STATE_WELCOME;
-                                                print_usage_info();
+                                                ai_capture_enable = 1;
+                                                pthread_create(&ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
                                         }
-                                        break;
-                                default: //数字键
-                                        textbox_addchar(&textboxes[0], '0' + i);
-                                        if (current_state == STATE_NUM_ERROR)
+                                        else if (ai_capture_enable == 1)
                                         {
-                                                current_state = STATE_WELCOME;
-                                                print_usage_info();
+                                                ai_capture_enable = 0;
+                                                read_pcm(3, "/mnt/frame/audio_frame.pcm");
                                         }
+                                }
+                                break;
+                                case 4: //@摄像头
+                                {
+                                        if (vi_capture_enable == 0)
+                                        {
+                                                vi_capture_enable = 1;
+                                                pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                                        }
+                                        else if (vi_capture_enable == 1)
+                                        {
+                                                vi_capture_enable = 0;
+                                                refresh_screen();
+                                        }
+                                }
+                                break;
+                                default:
                                         break;
                                 }
                         }

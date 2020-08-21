@@ -57,7 +57,7 @@ struct resolution_t
 static char *pc_prog_name = NULL; //demo名称
 static char *file = NULL;         //file name
 static char *type = "h264";       //get the type input
-static char *save_path = "/mnt/rtp_push_h264/";
+static char *save_path = "/mnt/frame/";
 static int main_res = 0;
 static int sub_res = 0;
 static int frame_num = 1;
@@ -235,9 +235,9 @@ void *video_encode_from_vi_th(void *arg)
         /* init the save file name and open it */
         memset(venc_th->save_file, 0x00, sizeof(venc_th->save_file));
         if (H264_ENC_TYPE == venc_th->en_type)
-                sprintf(venc_th->save_file, "%s/h264_chn%d_%d.str", save_path, chn_index, venc_th->venc_handle);
+                sprintf(venc_th->save_file, "%s/h264_push.str", save_path);//, chn_index, venc_th->venc_handle
         else
-                sprintf(venc_th->save_file, "%s/h265_chn%d_%d.str", save_path, chn_index, venc_th->venc_handle);
+                sprintf(venc_th->save_file, "%s/h265_push.str", save_path);//, chn_index, venc_th->venc_handle
 
         /* save file open */
         if (MJPEG_ENC_TYPE != venc_th->en_type)
@@ -272,9 +272,9 @@ void *video_encode_from_vi_th(void *arg)
                         else
                         {
                                 fwrite(stream->data, stream->len, 1, save_fp);
+                                printf("h264 update\n");
                                 ak_venc_release_stream(venc_th->venc_handle, stream);
                                 // count++;
-                                printf("h264 update\n");
                                 rtp();
                                 printf("rtp send\n");
                         }

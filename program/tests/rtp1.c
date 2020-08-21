@@ -207,7 +207,7 @@ int rtp()
         struct sockaddr_in server;
 
         len = sizeof(server);
-        OpenBitstreamFile("/mnt/rtp_push_h264/h264_chn0_0.str");
+        OpenBitstreamFile("/mnt/frame/h264_push.str");
         timestamp_increase = (unsigned int)(90000.0 / framerate); //+0.5);
         server.sin_family = AF_INET;
         server.sin_port = htons(DEST_PORT);

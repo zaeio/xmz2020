@@ -17,31 +17,22 @@
 
 // int sample_rate = 8000; //8000 12000 11025 16000 22050 24000 32000 44100 48000
 // int volume = 3;
-char *pcm_file = "/mnt/frame/ak_ao_test.pcm";
+char *audio_frame_file = "/mnt/frame/audio_frame.pcm";
+char *bell_pcm_file = "/mnt/bell.pcm";
 int ao_handle_id = -1;
-FILE *fp_pcm_o = NULL;
+int play_bell_flag = 0;
+
 // int channel_num = AUDIO_CHANNEL_MONO;
 
-static FILE *open_pcm_file(const char *pcm_file)
+void read_pcm(unsigned int volume, char *pcmfilename)
 {
-        FILE *fp_pcm_o = fopen(pcm_file, "r");
-        if (NULL == fp_pcm_o)
-        {
-                printf("open pcm file erro\n");
-                return NULL;
-        }
-        printf("open pcm file: %s OK\n", pcm_file);
-        return fp_pcm_o;
-}
-
-void read_pcm(unsigned int volume)
-{
+        FILE *fp_pcm_o = NULL;
         int read_len = 0;
         int send_len = 0;
         int total_len = 0;
         unsigned char data[4096] = {0};
 
-        fp_pcm_o =  fopen(pcm_file, "r");
+        fp_pcm_o = fopen(pcmfilename, "r");
         if (NULL == fp_pcm_o)
         {
                 printf("open file error\n");
@@ -92,6 +83,14 @@ void read_pcm(unsigned int volume)
         // ao_handle_id = -1;
 }
 
+void play_bell_routine()
+{
+        while (play_bell_flag)
+        {
+                read_pcm(3, bell_pcm_file);
+        }
+}
+
 int ak_ao_init()
 {
         /* start the application */
@@ -139,4 +138,3 @@ int ak_ao_init()
         //         ak_ao_close(ao_handle_id);
         //         ao_handle_id = -1;
 }
-

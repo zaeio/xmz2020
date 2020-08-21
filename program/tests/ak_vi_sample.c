@@ -34,7 +34,7 @@
 #define LEN_HINT 512
 #define LEN_OPTION_SHORT 512
 #define DEF_FRAME_DEPTH 3
-#define RES_GROUP 6
+#define RES_GROUP 7
 
 VI_CHN_ATTR chn_attr;     //main channel attribute
 VI_CHN_ATTR chn_attr_sub; //sub channel attribute
@@ -43,7 +43,7 @@ int frame_num = 0; //=0时连续拍摄
 int channel_num = 0;
 char *isp_path = "/etc/jffs2/isp_ar0230_dvp.conf";
 // char *save_path = "/mnt/frame/";
-int main_res_id = 5; //used resolution
+int main_res_id = 6; //used resolution
 int sub_res_id = 0;
 int vi_capture_enable = 0;
 
@@ -54,7 +54,8 @@ int res_group[RES_GROUP][2] = {
     {1280, 720},  /*   720P  */
     {960, 1080},  /*   1080i */
     {1920, 1080}, /*   1080P */
-    {608, 600}};
+    {608, 600},
+    {896, 600}};
 
 struct show_frame_param
 {
@@ -218,7 +219,8 @@ void show_frame(void *arg)
 void vi_capture_loop()
 {
         struct video_input_frame frame;
-        uint32_t *RGBmap;
+        // uint32_t *RGBmap;
+        char *graymap;
 
         printf("*** vi capture start ***\n");
 
@@ -231,10 +233,15 @@ void vi_capture_loop()
 
                 if (!ret)
                 {
-                        RGBmap = yuv420_to_rgb(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
-                        put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        // RGBmap = yuv420_to_rgb(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        // put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
 
-                        free(RGBmap);
+                        graymap = yuv420_to_gray(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        put_gray_map(0, 0, graymap, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        // send_Vframe(graymap, res_group[main_res_id][0] * res_group[main_res_id][1]);
+
+                        // free(RGBmap);
+                        free(graymap);
                         ak_vi_release_frame(channel_num, &frame);
                 }
                 else
@@ -244,6 +251,7 @@ void vi_capture_loop()
                 }
         }
         printf("*** vi capture finish ***\n");
+        pthread_exit(NULL);
 }
 
 /**

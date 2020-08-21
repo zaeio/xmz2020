@@ -277,13 +277,34 @@ void put_char_big(int x, int y, char c_ascii, int fontsize, int colidx)
         {
                 font_index = c_ascii - 'a' + font_info->offset_lower;
         }
-        else if (c_ascii == '#')
+        else
         {
-                font_index = font_info->index_hash;
-        }
-        else if (c_ascii == '*')
-        {
-                font_index = font_info->index_star;
+                switch (c_ascii)
+                {
+                case '#':
+                        font_index = font_info->index_hash;
+                        break;
+                case '*':
+                        font_index = font_info->index_star;
+                        break;
+                case '[':
+                        font_index = font_info->index_answer;
+                        break;
+                case ']':
+                        font_index = font_info->index_hangup;
+                        break;
+                case '&':
+                        font_index = font_info->index_microphone;
+                        break;
+                case '$':
+                        font_index = font_info->index_lock;
+                        break;
+                case '@':
+                        font_index = font_info->index_camera;
+                        break;
+                default:
+                        break;
+                }
         }
 
         //printf("width = %d   height = %d   bytes_per_line = %d\n", font_info->width, font_info->height, font_info->bytes_per_line);
@@ -484,6 +505,31 @@ uint32_t *yuv420_to_rgb(char *yuv_data, int width, int height)
         return RGBmap;
 }
 
+char *yuv420_to_gray(char *yuv_data, int width, int height)
+{
+        int size = width * height;
+        int i, j;
+        char *graymap;
+
+        graymap = (char *)malloc(sizeof(char) * size);
+        for (i = 0; i < height; i++)
+        {
+                for (j = 0; j < width; j++)
+                {
+                        char Y = yuv_data[i * width + j];
+
+                        if (Y < 0)
+                                Y = 0;
+                        if (Y > 255)
+                                Y = 255;
+
+                        graymap[i * width + j] = Y;
+                        //printf("0x%06X\n", RGBmap[i * width + j]);
+                }
+        }
+        return graymap;
+}
+
 static void __pixel_loc(int32_t x, int32_t y, union multiptr *loc)
 {
         switch (rotation)
@@ -570,6 +616,51 @@ void put_rgb_map(int x, int y, uint32_t *rgbmap, int width, int height)
 
                         __pixel_loc(x_pixel, y_pixel, &loc);
                         __setpixel(loc, 0, rgbmap[i * width + j]);
+                }
+        }
+}
+
+void put_gray_map(int x, int y, char *graymap, int width, int height)
+{
+        uint32_t xormode;
+        union multiptr loc;
+        int i, j, x_pixel, y_pixel;
+
+        // printf("putting rgb\n");
+        for (i = 0; i < height; i++)
+        {
+                for (j = 0; j < width; j++)
+                {
+                        x_pixel = x + j;
+                        y_pixel = y + i;
+
+                        if ((x_pixel < 0) || (x_pixel >= 1024) || (y_pixel < 0) || (y_pixel >= 600))
+                        {
+                                printf("pixel lacation out of range!\n");
+                                return;
+                        }
+
+                        char R = graymap[i * width + j];
+                        char G = graymap[i * width + j];
+                        char B = graymap[i * width + j];
+
+                        if (R < 0)
+                                R = 0;
+                        if (G < 0)
+                                G = 0;
+                        if (B < 0)
+                                B = 0;
+                        if (R > 255)
+                                R = 255;
+                        if (G > 255)
+                                G = 255;
+                        if (B > 255)
+                                B = 255;
+
+                        uint32_t RGB = ((uint32_t)B << 16) | ((uint32_t)G << 8) | ((uint32_t)R);
+
+                        __pixel_loc(x_pixel, y_pixel, &loc);
+                        __setpixel(loc, 0, RGB);
                 }
         }
 }
