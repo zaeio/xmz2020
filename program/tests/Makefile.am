@@ -49,7 +49,7 @@ endif
 ##############################################
 ak_lib = /home/bk/sdk_release_dir/platform/lib
 
-GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h ak_vi.h ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c ak_venc.h ak_venc_sample.c rtp1.c rtp1.h av_socket.c
+GUI_SOURCES	= GUI.c testutils.c testutils.h fbutils.h font_8x8.c font_8x16.c font.h font_big.c font_big.h ak_vi.h ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c av_socket.c
 GUI_LDADD	= $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS) $(ak_lib)/*.so 
 if FREEBSD
 GUI_SOURCES		+= fbutils-bsd.c

@@ -173,16 +173,14 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__GUI_SOURCES_DIST = GUI.c testutils.c testutils.h fbutils.h \
 	font_8x8.c font_8x16.c font.h font_big.c font_big.h ak_vi.h \
-	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c ak_venc.h \
-	ak_venc_sample.c rtp1.c rtp1.h av_socket.c fbutils-bsd.c \
-	fbutils-linux.c
+	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c av_socket.c \
+	fbutils-bsd.c fbutils-linux.c
 @FREEBSD_TRUE@am__objects_1 = fbutils-bsd.$(OBJEXT)
 @FREEBSD_FALSE@am__objects_2 = fbutils-linux.$(OBJEXT)
 am_GUI_OBJECTS = GUI.$(OBJEXT) testutils.$(OBJEXT) font_8x8.$(OBJEXT) \
 	font_8x16.$(OBJEXT) font_big.$(OBJEXT) ak_vi_sample.$(OBJEXT) \
 	ak_ai_sample.$(OBJEXT) ak_ao_sample.$(OBJEXT) \
-	ak_venc_sample.$(OBJEXT) rtp1.$(OBJEXT) av_socket.$(OBJEXT) \
-	$(am__objects_1) $(am__objects_2)
+	av_socket.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 GUI_OBJECTS = $(am_GUI_OBJECTS)
 am__DEPENDENCIES_1 =
 GUI_DEPENDENCIES = $(top_builddir)/src/libts.la $(am__DEPENDENCIES_1) \
@@ -488,9 +486,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 ak_lib = /home/bk/sdk_release_dir/platform/lib
 GUI_SOURCES = GUI.c testutils.c testutils.h fbutils.h font_8x8.c \
 	font_8x16.c font.h font_big.c font_big.h ak_vi.h \
-	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c ak_venc.h \
-	ak_venc_sample.c rtp1.c rtp1.h av_socket.c $(am__append_1) \
-	$(am__append_2)
+	ak_vi_sample.c ak_ai_sample.c ak_ao_sample.c av_socket.c \
+	$(am__append_1) $(am__append_2)
 GUI_LDADD = $(top_builddir)/src/libts.la $(LIBEVDEV_LIBS) $(ak_lib)/*.so 
 GUI2_SOURCES = GUI2.c testutils.c testutils.h fbutils.h font_8x8.c \
 	font_8x16.c font.h font_big.c font_big.h ak_vi.h \
@@ -688,7 +685,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GUI2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ak_ai_sample.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ak_ao_sample.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ak_venc_sample.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ak_vi_sample.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/av_socket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fbutils-bsd.Po@am__quote@
@@ -696,7 +692,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_8x16.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_8x8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font_big.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtp1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sdlutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testutils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ts_calibrate.Po@am__quote@

@@ -45,4 +45,5 @@ void put_const_string_center(int x_c, int y_c, char *s, int strl, int fontsize, 
 uint32_t *convert_rgb_format(char *rgbmap, int width, int height);
 uint32_t *yuv420_to_rgb(char *yuv_data, int width, int height);
 void put_rgb_map(int x, int y, uint32_t *rgbmap, int width, int height);
+void put_gray_map(int x, int y, char *graymap, int width, int height);
 #endif /* _FBUTILS_H */

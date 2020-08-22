@@ -20,13 +20,14 @@
 #include "ak_ao.h"
 #include "ak_mem.h"
 #include "ak_log.h"
-#include "ak_venc.h"
+#include "av_socket.h"
 
 #define STATE_WELCOME 0
-#define STATE_CALL 1
-#define STATE_NUM_ERROR 2
-#define FRAME_WIDTH 640  //584, 640
-#define FRAME_HEIGHT 480 //600, 480
+#define STATE_CALLED 1
+#define STATE_ONLINE 2
+
+#define FRAME_WIDTH 896  //584, 640
+#define FRAME_HEIGHT 600 //600, 480
 // #define XRES 1024
 // #define YRES 600
 
@@ -36,7 +37,7 @@
 
 //调色板，存储需要写入colormap的颜色，BGR格式
 static int palette[] = {
-    0xD5D5D5,           //背景色0、按钮边框色0
+    0xB5B5B5,           //背景色0、按钮边框色0     0xD5D5D5
     0x000000,           //字体色黑色默认1
     0xF9F9F9, 0xC0C0C0, // 数字键未激活2、激活色3
     0xEEEEEE, 0xC0C0C0, //其他键未激活4、激活色5
@@ -44,10 +45,11 @@ static int palette[] = {
     0x0033F9, 0x0022C9  //红色未激活8、红色激活9
 };
 
-int current_state = STATE_WELCOME;           //当前输入状态
+extern int indoor_current_state;    //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct timeval start;
 
+extern pthread_t vi_thread, ai_thread, indoor_bell_thread;
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
 extern int play_bell_flag;    //播放铃声使能
@@ -66,19 +68,11 @@ static void sig(int sig)
 void print_usage_info()
 {
         fillrect(0, 200, xres / 7 * 4, 400, 0); //信息背景
-        switch (current_state)
+        switch (indoor_current_state)
         {
         case STATE_WELCOME:
                 put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
                 put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
-                break;
-        case STATE_CALL:
-                put_const_string_center(xres / 7 * 2 - 40, 250, CS_48x48_calling, 4, 48, 1);
-                put_const_string_center(xres / 7 * 2, 340, CS_48x48_cancel, 6, 48, 1);
-                break;
-        case STATE_NUM_ERROR:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_wrong_number, 5, 48, 1);
-                put_const_string_center(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
                 break;
 
         default:
@@ -102,7 +96,7 @@ static void refresh_screen(void)
 
 void init_widget()
 {
-        int i, j;
+        int i;
 
         /* Initialize buttons */
         int btn_w = xres / 8;
@@ -146,17 +140,17 @@ void init_widget()
 void print_time()
 {
         struct timeval end;
-        static struct timeval last;
+        // static struct timeval last;
 
-        int timespend;
+        // int timespend;
 
         gettimeofday(&end, NULL);
-        printf("wating time = %d\n", end.tv_sec - start.tv_sec);
+        printf("wating time = %d\n", (int)(end.tv_sec - start.tv_sec));
 }
 
 void waiting_dots(void)
 {
-        int i, j;
+        int i;
         while (1)
         {
                 sleep(1);
@@ -173,12 +167,13 @@ void waiting_dots(void)
         }
 }
 
+/*
 void open_yuv(char *filename)
 {
         unsigned char *rgb_p;
         char *YUVmap;
         uint32_t *RGBmap;
-        int i, j;
+        // int i, j;
 
         YUVmap = (char *)malloc(sizeof(char) * FRAME_WIDTH * FRAME_HEIGHT * 3);
         FILE *yuv_fp = fopen(filename, "r");
@@ -207,15 +202,14 @@ void open_yuv(char *filename)
         }
         put_rgb_map(0, 0, RGBmap, FRAME_WIDTH, FRAME_HEIGHT);
         free(YUVmap);
-}
+}*/
 
 int main(int argc, char **argv)
 {
         struct tsdev *ts;
         // int x, y;
         unsigned int i;
-        unsigned int mode = 0;
-        pthread_t vi_thread, ai_thread, bell_thread;
+        // unsigned int mode = 0;
 
         signal(SIGSEGV, sig); //这三个是程序中断退出信号
         signal(SIGINT, sig);  //按Ctrl+c退出程序
@@ -245,6 +239,8 @@ int main(int argc, char **argv)
         ai_handle_id = ak_ai_init();
         ao_handle_id = ak_ao_init();
         ak_vi_init();
+
+        setup_server_tcp();
 
         while (1)
         {
@@ -280,32 +276,31 @@ int main(int argc, char **argv)
                         {
                                 switch (i)
                                 {
-                                case 0: //[
+                                case 0: //[接听
                                 {
-                                        if (current_state == STATE_WELCOME)
+                                        if (indoor_current_state == STATE_CALLED)
                                         {
-                                                current_state = STATE_CALL;
-                                                // vi_capture_enable = 1;
-                                                // pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                                                indoor_current_state = STATE_ONLINE;
+                                                play_bell_flag = 0;
+                                                pthread_cancel(indoor_bell_thread);
+                                                send_answer();
 
                                                 // play_bell_flag = 1;
-                                                // pthread_create(&bell_thread, NULL, (void *)play_bell_routine, NULL);
-                                        }
-                                        else if (current_state == STATE_CALL)
-                                        {
-                                                current_state = STATE_WELCOME;
-                                                vi_capture_enable = 0;
-                                                play_bell_flag = 0;
-                                                refresh_screen();
+                                                // pthread_create(&indoor_bell_thread, NULL, (void *)play_bell_routine, NULL);
                                         }
                                 }
                                 break;
-                                case 1: //]
+                                case 1: //]挂断
                                 {
-                                        current_state = STATE_WELCOME;
-                                        vi_capture_enable = 0;
-                                        play_bell_flag = 0;
-                                        refresh_screen();
+                                        if (indoor_current_state != STATE_WELCOME)
+                                        {
+                                                indoor_current_state = STATE_WELCOME;
+                                                vi_capture_enable = 0;
+                                                play_bell_flag = 0;
+                                                pthread_cancel(indoor_bell_thread);
+                                                pthread_cancel(vi_thread);
+                                                refresh_screen();
+                                        }
                                 }
                                 break;
                                 case 2: //&语音
@@ -318,6 +313,7 @@ int main(int argc, char **argv)
                                         else if (ai_capture_enable == 1)
                                         {
                                                 ai_capture_enable = 0;
+                                                usleep(100000);
                                                 read_pcm(3, "/mnt/frame/audio_frame.pcm");
                                         }
                                 }
@@ -326,6 +322,8 @@ int main(int argc, char **argv)
                                 {
                                         if (vi_capture_enable == 0)
                                         {
+                                                // setup_tcp();
+                                                // send_Vframe();
                                                 vi_capture_enable = 1;
                                                 pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
                                         }
@@ -341,18 +339,6 @@ int main(int argc, char **argv)
                                 }
                         }
                 }
-
-                //printf("%ld.%06ld: %6d %6d %6d\n", samp.tv.tv_sec, samp.tv.tv_usec, samp.x, samp.y, samp.pressure);
-                // if (samp.pressure > 0)
-                // {
-                //         if (mode == 0x80000001)
-                //                 line(x, y, samp.x, samp.y, 2);
-                //         x = samp.x;
-                //         y = samp.y;
-                //         mode |= 0x80000000;
-                // }
-                // else
-                //         mode &= ~0x80000000;
         }
         fillrect(0, 0, xres - 1, yres - 1, 0);
         close_framebuffer();

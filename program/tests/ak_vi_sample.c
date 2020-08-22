@@ -219,7 +219,7 @@ void show_frame(void *arg)
 void vi_capture_loop()
 {
         struct video_input_frame frame;
-        // uint32_t *RGBmap;
+        uint32_t *RGBmap;
         char *graymap;
 
         printf("*** vi capture start ***\n");
@@ -237,10 +237,10 @@ void vi_capture_loop()
                         // put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
 
                         graymap = yuv420_to_gray(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
-                        put_gray_map(0, 0, graymap, res_group[main_res_id][0], res_group[main_res_id][1]);
-                        // send_Vframe(graymap, res_group[main_res_id][0] * res_group[main_res_id][1]);
+                        // put_gray_map(0, 0, graymap, res_group[main_res_id][0], res_group[main_res_id][1]);
+                        send_Vframe(graymap);
 
-                        // free(RGBmap);
+                        free(RGBmap);
                         free(graymap);
                         ak_vi_release_frame(channel_num, &frame);
                 }
