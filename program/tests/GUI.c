@@ -33,7 +33,7 @@
 // #define YRES 600
 
 #define NR_COLORS (sizeof(palette) / sizeof(palette[0]))
-#define NR_BUTTONS 12 //按钮数量
+#define NR_BUTTONS 14 //按钮数量
 #define TEXTBOXES_NUM 1
 
 //调色板，存储需要写入colormap的颜色，BGR格式
@@ -46,13 +46,14 @@ static int palette[] = {
     0x0033F9, 0x0022C9  //红色未激活8、红色激活9
 };
 
-extern int outdoor_current_state;           //当前输入状态
+int outdoor_current_state;                   //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
 
-pthread_t outdoor_vi_thread, outdoor_ai_thread;
-extern pthread_t tcp_outdoor_thread;
+extern int client_fd;
+pthread_t outdoor_vi_thread, tcp_outdoor_thread, outdoor_waitdots_thread, outdoor_ai_thread;
+
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
 extern int ai_handle_id;
@@ -125,12 +126,16 @@ void init_widget()
                 buttons[i].border_colidx[0] = buttons[i].border_colidx[1] = 0;
                 buttons[i].font_colidx[0] = buttons[i].font_colidx[1] = 1;
         }
+        buttons[12].w = buttons[13].w = xres / 8;
+        buttons[12].h = buttons[13].h = btn_number_h;
 
         buttons[10].fill_colidx[0] = 6; //接听
         buttons[10].fill_colidx[1] = 7;
         buttons[10].font_colidx[0] = buttons[10].font_colidx[1] = 2;
         buttons[11].fill_colidx[0] = 4; //*的颜色
         buttons[11].fill_colidx[1] = 5; //*的颜色
+
+        buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
 
         buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
         buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
@@ -139,7 +144,10 @@ void init_widget()
         buttons[7].y = buttons[8].y = buttons[9].y = btn_number_h;
         buttons[4].y = buttons[5].y = buttons[6].y = btn_number_h * 2;
         buttons[1].y = buttons[2].y = buttons[3].y = btn_number_h * 3;
-        buttons[10].y = buttons[0].y = buttons[11].y = btn_number_h * 4;
+        buttons[10].y = buttons[0].y = buttons[11].y = buttons[12].y = buttons[13].y = btn_number_h * 4;
+
+        buttons[12].x = 0;
+        buttons[13].x = xres / 8;
 
         buttons[0].text = "0";
         buttons[1].text = "1";
@@ -151,8 +159,10 @@ void init_widget()
         buttons[7].text = "7";
         buttons[8].text = "8";
         buttons[9].text = "9";
-        buttons[10].text = "[";
-        buttons[11].text = "*";
+        buttons[10].text = "["; //接通
+        buttons[11].text = "*"; //删除
+        buttons[12].text = "$"; //锁
+        buttons[13].text = "&"; //麦克风
 
         /* Initialize textboxes */
         textboxes[0].x = xres / 7 * 4;
@@ -203,49 +213,84 @@ void waiting_dots(void)
         }
 }
 
-void open_yuv(char *filename)
+void receive_outdoor_routine()
 {
-        unsigned char *rgb_p;
-        char *YUVmap;
-        uint32_t *RGBmap;
-        int i, j;
+        char buf[896] = {0};
 
-        YUVmap = (char *)malloc(sizeof(char) * FRAME_WIDTH * FRAME_HEIGHT * 3);
-        FILE *yuv_fp = fopen(filename, "r");
-        if (yuv_fp == NULL)
+        printf("receiving\n");
+        int recvlen = 0;
+        while ((recvlen = recv(client_fd, buf, 896, 0)) > 0)
         {
-                printf("yuv file not exist!");
-                return;
+                char file_name[255];
+                printf("recvlen = %d\n", recvlen);
+                switch (get_header(buf, recvlen))
+                {
+                        break;
+                case BUFF_CMD_ANSWER:
+                {
+                        printf("BUFF_CMD_ANSWER\n");
+                        outdoor_current_state = STATE_ONLINE; //STATE_ONLINE
+                        vi_capture_enable = 1;
+                        pthread_cancel(outdoor_waitdots_thread);
+                        pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                }
+                break;
+                case BUFF_CMD_CAMERA:
+                {
+                        printf("BUFF_CMD_CAMERA %d\n", buf[4]);
+                        if (buf[4] == 1)
+                        {
+                                vi_capture_enable = 1;
+                                pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                        }
+                        else
+                        {
+                                vi_capture_enable = 0;
+                                pthread_cancel(outdoor_vi_thread);
+                        }
+                }
+                break;
+                case BUFF_CMD_HANGUP:
+                {
+                        printf("BUFF_CMD_HANGUP\n");
+                        vi_capture_enable = 0;
+                        pthread_cancel(outdoor_vi_thread);
+                        pthread_cancel(outdoor_waitdots_thread);
+                        outdoor_current_state = STATE_WELCOME;
+
+                        //将#修改为接听
+                        buttons[10].fill_colidx[0] = 6;
+                        buttons[10].fill_colidx[1] = 7;
+                        buttons[10].text = "[";
+                        refresh_screen();
+                }
+                break;
+                case BUFF_CMD_UNLOCK:
+                {
+                        printf("BUFF_CMD_UNLOCK\n");
+                        buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 6;
+                        button_draw(&buttons[12]);
+                }
+                break;
+                default:
+                        break;
+                }
         }
-        fread(YUVmap, 1, FRAME_WIDTH * FRAME_HEIGHT * 3, yuv_fp);
-        printf("yuv data get\n");
-        // printf("yuv data:\n");
-        // for (i = 0; i < FRAME_WIDTH; i++)
-        // {
-        //         for (j = 0; j < FRAME_HEIGHT; j++)
-        //         {
-        //                 printf("%X  ", YUVmap[i * FRAME_WIDTH + j]);
-        //         }
-        //         printf("\n\n");
-        // }
-        //RGBmap = (char *)malloc(sizeof(uint32_t) * FRAME_WIDTH * FRAME_HEIGHT);
-        RGBmap = yuv420_to_rgb(YUVmap, FRAME_WIDTH, FRAME_HEIGHT);
-        if (RGBmap == NULL)
-        {
-                printf("RGBmap is NULL!\n");
-                return;
-        }
-        put_rgb_map(0, 0, RGBmap, FRAME_WIDTH, FRAME_HEIGHT);
-        free(YUVmap);
+        printf("receive finished\n");
+        close(client_fd);
+
+        //退出线程
+        pthread_exit(NULL);
 }
 
+//=======================================================================================
 int main(int argc, char **argv)
 {
         struct tsdev *ts;
         // int x, y;
         unsigned int i;
         unsigned int mode = 0;
-        
+
         signal(SIGSEGV, sig); //这三个是程序中断退出信号
         signal(SIGINT, sig);  //按Ctrl+c退出程序
         signal(SIGTERM, sig); //kill(1)终止
@@ -275,6 +320,7 @@ int main(int argc, char **argv)
         ao_handle_id = ak_ao_init();
         ak_vi_init();
         setup_client_tcp();
+        pthread_create(&tcp_outdoor_thread, NULL, (void *)receive_outdoor_routine, NULL);
 
         while (1)
         {
@@ -328,12 +374,7 @@ int main(int argc, char **argv)
                                                         buttons[10].fill_colidx[1] = 9;
                                                         buttons[10].text = "]";
                                                         button_draw(&buttons[10]);
-
-                                                        // if (pthread_create(&thID_dot, NULL, (void *)waiting_dots, NULL) != 0)
-                                                        // {
-                                                        //         printf("Create pthread error!\n");
-                                                        //         exit(1);
-                                                        // }
+                                                        pthread_create(&outdoor_waitdots_thread, NULL, (void *)waiting_dots, NULL);
 
                                                         // open_yuv("/mnt/frame/test.yuv");
 
@@ -344,7 +385,6 @@ int main(int argc, char **argv)
                                                         // pthread_create(&ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
 
                                                         send_call();
-                                                        pthread_create(&tcp_outdoor_thread, NULL, (void *)receive_outdoor_routine, NULL);
                                                         // send_Vframe();
                                                 }
                                                 else
@@ -357,8 +397,9 @@ int main(int argc, char **argv)
                                         {
                                                 vi_capture_enable = 0;
                                                 ai_capture_enable = 0;
-                                                // pthread_cancel(outdoor_vi_thread);
+                                                send_hangup();
                                                 // pthread_cancel(ai_thread);
+                                                pthread_cancel(outdoor_vi_thread);
 
                                                 outdoor_current_state = STATE_WELCOME;
                                                 //将#修改为接听
@@ -379,6 +420,12 @@ int main(int argc, char **argv)
                                                 outdoor_current_state = STATE_WELCOME;
                                                 print_usage_info();
                                         }
+                                        break;
+                                case 12:
+                                        buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
+                                        button_draw(&buttons[12]);
+                                        break;
+                                case 13:
                                         break;
                                 default: //数字键
                                         textbox_addchar(&textboxes[0], '0' + i);

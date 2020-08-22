@@ -45,14 +45,17 @@ static int palette[] = {
     0x0033F9, 0x0022C9  //红色未激活8、红色激活9
 };
 
-extern int indoor_current_state;    //当前输入状态
+int indoor_current_state = STATE_WELCOME;    //当前输入状态
 static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct timeval start;
 
-extern pthread_t vi_thread, ai_thread, indoor_bell_thread;
+extern int server_fd, connfd;
+pthread_t indoor_vi_thread, indoor_ai_thread, indoor_bell_thread, tcp_indoor_thread;
+
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
 extern int play_bell_flag;    //播放铃声使能
+char monitor_enable = 0;
 extern int ai_handle_id;
 extern int ao_handle_id;
 
@@ -167,43 +170,78 @@ void waiting_dots(void)
         }
 }
 
-/*
-void open_yuv(char *filename)
+void receive_indoor_routine()
 {
-        unsigned char *rgb_p;
-        char *YUVmap;
-        uint32_t *RGBmap;
-        // int i, j;
+        char buf[896] = {0};
+        char *graymap;
 
-        YUVmap = (char *)malloc(sizeof(char) * FRAME_WIDTH * FRAME_HEIGHT * 3);
-        FILE *yuv_fp = fopen(filename, "r");
-        if (yuv_fp == NULL)
+        printf("receiving\n");
+        int recvlen = 0;
+        int framecount = 0; //帧数
+        int recvcount = 0;  //文件长度
+        while ((recvlen = recv(connfd, buf, 896, 0)) > 0)
         {
-                printf("yuv file not exist!");
-                return;
+                char file_name[255];
+                // printf("recvlen = %d\n", recvlen);
+                switch (get_header(buf, recvlen))
+                {
+                case BUFF_CMD_IMG: //frame
+                {
+                        // printf("BUFF_CMD_IMG\n");
+                        //先结束上一帧
+                        if (framecount > 0)
+                        {
+                                put_gray_map(0, 0, graymap, FRAME_WIDTH, FRAME_HEIGHT);
+                                free(graymap);
+                                recvcount = 0;
+                        }
+                        framecount++;
+                        graymap = (char *)calloc(FRAME_WIDTH * FRAME_HEIGHT, sizeof(char));
+                }
+                break;
+                case BUFF_CMD_CALL:
+                {
+                        printf("BUFF_CMD_CALL\n");
+                        indoor_current_state = STATE_CALLED;
+                        play_bell_flag = 1;
+                        pthread_create(&indoor_bell_thread, NULL, (void *)play_bell_routine, NULL);
+                }
+                break;
+                case BUFF_CMD_HANGUP:
+                {
+                        printf("BUFF_CMD_HANGUP\n");
+                        play_bell_flag = 0;
+                        pthread_cancel(indoor_bell_thread);
+                        indoor_current_state = STATE_WELCOME;
+                        refresh_screen();
+                }
+                break;
+                default:
+                {
+                        //写入graymap
+                        int i;
+                        if (graymap != NULL)
+                        {
+                                for (i = 0; i < recvlen; i++)
+                                {
+                                        if (recvcount + i < FRAME_WIDTH * FRAME_HEIGHT)
+                                                graymap[recvcount + i] = buf[i];
+                                }
+                                recvcount += recvlen;
+                        }
+                }
+                break;
+                }
         }
-        fread(YUVmap, 1, FRAME_WIDTH * FRAME_HEIGHT * 3, yuv_fp);
-        printf("yuv data get\n");
-        // printf("yuv data:\n");
-        // for (i = 0; i < FRAME_WIDTH; i++)
-        // {
-        //         for (j = 0; j < FRAME_HEIGHT; j++)
-        //         {
-        //                 printf("%X  ", YUVmap[i * FRAME_WIDTH + j]);
-        //         }
-        //         printf("\n\n");
-        // }
-        //RGBmap = (char *)malloc(sizeof(uint32_t) * FRAME_WIDTH * FRAME_HEIGHT);
-        RGBmap = yuv420_to_rgb(YUVmap, FRAME_WIDTH, FRAME_HEIGHT);
-        if (RGBmap == NULL)
-        {
-                printf("RGBmap is NULL!\n");
-                return;
-        }
-        put_rgb_map(0, 0, RGBmap, FRAME_WIDTH, FRAME_HEIGHT);
-        free(YUVmap);
-}*/
+        printf("receive finished\n");
+        close(server_fd);
+        close(connfd);
 
+        //退出线程
+        pthread_exit(NULL);
+}
+
+//=======================================================================================
 int main(int argc, char **argv)
 {
         struct tsdev *ts;
@@ -240,7 +278,8 @@ int main(int argc, char **argv)
         ao_handle_id = ak_ao_init();
         ak_vi_init();
 
-        setup_server_tcp();
+        if (setup_server_tcp())
+                pthread_create(&tcp_indoor_thread, NULL, (void *)receive_indoor_routine, NULL);
 
         while (1)
         {
@@ -295,10 +334,10 @@ int main(int argc, char **argv)
                                         if (indoor_current_state != STATE_WELCOME)
                                         {
                                                 indoor_current_state = STATE_WELCOME;
-                                                vi_capture_enable = 0;
                                                 play_bell_flag = 0;
+                                                send_hangup();
                                                 pthread_cancel(indoor_bell_thread);
-                                                pthread_cancel(vi_thread);
+                                                usleep(100000);
                                                 refresh_screen();
                                         }
                                 }
@@ -308,7 +347,7 @@ int main(int argc, char **argv)
                                         if (ai_capture_enable == 0)
                                         {
                                                 ai_capture_enable = 1;
-                                                pthread_create(&ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
+                                                pthread_create(&indoor_ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
                                         }
                                         else if (ai_capture_enable == 1)
                                         {
@@ -318,18 +357,22 @@ int main(int argc, char **argv)
                                         }
                                 }
                                 break;
+                                case 3:
+                                        send_unlock();
+                                        break;
                                 case 4: //@摄像头
                                 {
-                                        if (vi_capture_enable == 0)
+                                        if (monitor_enable == 0)
                                         {
-                                                // setup_tcp();
-                                                // send_Vframe();
-                                                vi_capture_enable = 1;
-                                                pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                                                send_camera(1);
+                                                monitor_enable = 1;
+                                                // vi_capture_enable = 1;
+                                                // pthread_create(&indoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
                                         }
-                                        else if (vi_capture_enable == 1)
+                                        else if (monitor_enable == 1)
                                         {
-                                                vi_capture_enable = 0;
+                                                send_camera(0);
+                                                monitor_enable = 0;
                                                 refresh_screen();
                                         }
                                 }

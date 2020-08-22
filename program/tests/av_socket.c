@@ -25,26 +25,18 @@
 #define IMG_WIDTH 896
 #define IMG_HEIGHT 600
 
-//数据包，[包头，指令，数据]
-//图像的数据长度超过了255
-#define BUFF_CMD_IMG 0x01    //图像
-#define BUFF_CMD_AUDIO 0x02  //音频
-#define BUFF_CMD_LOCK 0x03   //开锁
-#define BUFF_CMD_CALL 0x04   //拨号请求
-#define BUFF_CMD_ANSWER 0x05 //接听应答
+void receive_outdoor_routine();
+void receive_indoor_routine();
 
 extern int send_sound_flag;
 extern int recv_sound_flag;
 int client_fd, server_fd, connfd;
 struct sockaddr_in servaddr, connaddr; //服务器ip，接入的客户端ip
-char *server_addr_str = "192.168.1.120";
+char *server_addr_str = "192.168.1.118";
 
-pthread_t indoor_bell_thread, vi_thread, ai_thread;
-pthread_t outdoor_vi_thread, outdoor_ai_thread;
-pthread_t tcp_indoor_thread,tcp_outdoor_thread;
-extern int play_bell_flag; //播放铃声使能
-int outdoor_current_state = 0;
-int indoor_current_state = 0;
+// pthread_t indoor_bell_thread, indoor_vi_thread, indoor_ai_thread;
+// pthread_t outdoor_vi_thread, outdoor_ai_thread, outdoor_waitdots_thread;
+extern int play_bell_flag;    //播放铃声使能
 extern int vi_capture_enable; //摄像持续使能
 
 //建立语音的TCP连接
@@ -70,7 +62,7 @@ void setup_client_tcp()
         }
 }
 
-void setup_server_tcp()
+int setup_server_tcp()
 {
         // １，创建TCP套接字
         server_fd = socket(AF_INET /*IPv4*/, SOCK_STREAM /*TCP*/, 0);
@@ -85,7 +77,7 @@ void setup_server_tcp()
         {
                 perror("bind sound tcp fail");
                 close(server_fd);
-                return;
+                return 0;
         }
         // ３，将套接字设置为监听状态
         // 设定之后的fd，就是监听套接字，专用来等待连接的
@@ -93,7 +85,7 @@ void setup_server_tcp()
         {
                 perror("listen fail");
                 close(server_fd);
-                return;
+                return 0;
         }
         // ４，坐等对方的连接请求... ...
         // 返回的connfd，就是已连接套接字，专用来读写通信的
@@ -105,14 +97,14 @@ void setup_server_tcp()
         if (connfd > 0)
         {
                 printf("new connection: [%s:%hu]\n", inet_ntoa(connaddr.sin_addr), ntohs(connaddr.sin_port));
-                pthread_create(&tcp_indoor_thread, NULL, (void *)receive_indoor_routine, NULL);
+                return 1;
         }
         else
         {
                 perror("accept() failed");
                 close(connfd);
                 close(server_fd);
-                return;
+                return 0;
         }
 }
 
@@ -125,11 +117,12 @@ char get_header(char *buff, int length)
                 {
                         // printf("buff[%d] = %d  buff[%d] = %d   buff[%d] = %d \n", i, buff[i], i + 1, buff[i + 1], i + 2, buff[i + 2]);
                         // printf("buff[%d] = %d\n", i + 3, buff[i + 3]);
-                        if (buff[i] == 0x55 && buff[i + 1] == 0x55 && buff[i + 2] == 0x55)
+                        // printf("head = [%d %d %d %d] \n", buff[i], buff[i + 1], buff[i + 2], buff[i + 3]);
+                        if (buff[i] == BUFF_H1 && buff[i + 1] == BUFF_H2 && buff[i + 2] == BUFF_H3)
                         {
-                                if (buff[i + 3] >= 0x01 && buff[i + 3] <= 0x05)
+                                if (buff[i + 3] >= 0x01 && buff[i + 3] <= 0x07)
                                 {
-                                        // printf("headder 123 confirmed  buff[%d] = %d\n", i + 3, buff[i + 3]);
+                                        // printf("headder confirmed  %d\n", buff[i + 3]);
                                         return buff[i + 3];
                                 }
                         }
@@ -142,12 +135,12 @@ void send_Vframe(char *graymap) //
         int i;
         char buff[4] = {0};
 
-        buff[0] = 0x55; //包头
-        buff[1] = 0x55;
-        buff[2] = 0x55;
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
         buff[3] = BUFF_CMD_IMG;
         send(client_fd, buff, 4, 0);
-        printf("BUFF_CMD_IMG send\n");
+        // printf("BUFF_CMD_IMG send\n");
         // send(socket_fd, graymap,IMG_WIDTH*IMG_HEIGHT,0);
         for (i = 0; i < IMG_HEIGHT; i++)
         {
@@ -155,15 +148,28 @@ void send_Vframe(char *graymap) //
         }
 }
 
+void send_camera(char flag)
+{
+        char buff[5] = {0};
+
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
+        buff[3] = BUFF_CMD_CAMERA;
+        buff[4] = flag;
+        send(connfd, buff, 5, 0);
+        printf("BUFF_CMD_CAMERA %d send\n", flag);
+}
+
 void send_unlock()
 {
-        char *buff[4] = {0};
+        char buff[4] = {0};
 
-        buff[0] = 0x55; //包头
-        buff[1] = 0x55;
-        buff[2] = 0x55;
-        buff[3] = BUFF_CMD_LOCK;
-        send(client_fd, buff, 4, 0);
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
+        buff[3] = BUFF_CMD_UNLOCK;
+        send(connfd, buff, 4, 0);
         printf("BUFF_CMD_LOCK send\n");
 }
 
@@ -171,9 +177,9 @@ void send_answer()
 {
         char buff[4] = {0};
 
-        buff[0] = 0x55; //包头
-        buff[1] = 0x55;
-        buff[2] = 0x55;
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
         buff[3] = BUFF_CMD_ANSWER;
         send(connfd, buff, 4, 0);
 
@@ -184,13 +190,27 @@ void send_call()
 {
         char buff[4] = {0};
 
-        buff[0] = 0x55; //包头
-        buff[1] = 0x55;
-        buff[2] = 0x55;
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
         buff[3] = BUFF_CMD_CALL;
         send(client_fd, buff, 4, 0);
 
         printf("BUFF_CMD_CALL send\n");
+}
+
+void send_hangup()
+{
+        char buff[4] = {0};
+
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
+        buff[3] = BUFF_CMD_HANGUP;
+        send(connfd, buff, 4, 0);
+        send(server_fd, buff, 4, 0);
+
+        printf("BUFF_CMD_ANSWER send\n");
 }
 
 void send_pcm()
@@ -216,6 +236,7 @@ void send_pcm()
         close(client_fd);
 }
 
+/*
 void receive_indoor_routine()
 {
         char buf[896] = {0};
@@ -251,6 +272,13 @@ void receive_indoor_routine()
                         indoor_current_state = 1;
                         play_bell_flag = 1;
                         pthread_create(&indoor_bell_thread, NULL, (void *)play_bell_routine, NULL);
+                }
+                break;
+                case BUFF_CMD_HANGUP:
+                {
+                        printf("BUFF_CMD_HANGUP\n");
+                        pthread_cancel(indoor_bell_thread);
+                        indoor_current_state = 0;
                 }
                 break;
                 default:
@@ -290,17 +318,33 @@ void receive_outdoor_routine()
                 printf("recvlen = %d\n", recvlen);
                 switch (get_header(buf, recvlen))
                 {
-                break;
+                        break;
                 case BUFF_CMD_ANSWER:
                 {
                         printf("BUFF_CMD_ANSWER\n");
                         outdoor_current_state = 2; //STATE_ONLINE
                         vi_capture_enable = 1;
-                        pthread_create(&vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                        pthread_cancel(outdoor_waitdots_thread);
+                        pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                }
+                break;
+                case BUFF_CMD_CAMERA:
+                {
+                        printf("BUFF_CMD_CAMERA\n");
+                        vi_capture_enable = 1;
+                        pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                }
+                break;
+                case BUFF_CMD_HANGUP:
+                {
+                        printf("BUFF_CMD_HANGUP\n");
+                        pthread_cancel(outdoor_vi_thread);
+                        pthread_cancel(outdoor_waitdots_thread);
+                        outdoor_current_state = 0;
                 }
                 break;
                 default:
-                break;
+                        break;
                 }
         }
         printf("receive finished\n");
@@ -310,3 +354,4 @@ void receive_outdoor_routine()
         //退出线程
         pthread_exit(NULL);
 }
+*/
