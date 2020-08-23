@@ -18,5 +18,5 @@ void send_unlock();
 void send_answer();
 void send_call();
 void send_camera(char flag);
-void send_hangup();
+void send_hangup(char flag);
 void send_pcm();

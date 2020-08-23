@@ -337,6 +337,6 @@ int ak_ai_save_aec_dump_file(int ai_handle_id, int enable);
 int ak_ai_close(int ai_handle_id);
 
 int ak_ai_init();
-void ai_capture_loop();
+void ai_capture_loop(void *arg);
 
 #endif

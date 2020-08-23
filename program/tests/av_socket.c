@@ -199,7 +199,7 @@ void send_call()
         printf("BUFF_CMD_CALL send\n");
 }
 
-void send_hangup()
+void send_hangup(char flag)
 {
         char buff[4] = {0};
 
@@ -207,33 +207,55 @@ void send_hangup()
         buff[1] = BUFF_H2;
         buff[2] = BUFF_H3;
         buff[3] = BUFF_CMD_HANGUP;
-        send(connfd, buff, 4, 0);
-        send(server_fd, buff, 4, 0);
+        if (flag == 0)
+        {
+                send(client_fd, buff, 4, 0);//向服务器发送
+        }
+        else
+        {
+                send(connfd, buff, 4, 0);//向客户端发送
+        }
+        printf("BUFF_CMD_HANGUP send\n");
+}
 
-        printf("BUFF_CMD_ANSWER send\n");
+void send_audio(char flag)
+{
+        char buff[4] = {0};
+        buff[0] = BUFF_H1; //包头
+        buff[1] = BUFF_H2;
+        buff[2] = BUFF_H3;
+        buff[3] = BUFF_CMD_AUDIO;
+        if (flag == 0)
+        {
+                send(client_fd, buff, 4, 0);//向服务器发送
+        }
+        else
+        {
+                send(connfd, buff, 4, 0);//向客户端发送
+        }
+        printf("BUFF_CMD_AUDIO send\n");
 }
 
 void send_pcm()
 {
-        char *pcmfilename = "/mnt/frame/ak_ao_test.pcm";
+        char *filename = "/mnt/frame/ak_ao_test.pcm";
         FILE *fp_pcm = NULL;
         struct stat filestat;
         char *pcmbuf;
 
-        fp_pcm = fopen(pcmfilename, "r");
+        fp_pcm = fopen(filename, "r");
         if (NULL == fp_pcm)
         {
                 printf("open file error\n");
                 return;
         }
 
-        stat(pcmfilename, &filestat); //获取文件状态，主要是大小
+        stat(filename, &filestat); //获取文件状态，主要是大小
         pcmbuf = (char *)calloc(filestat.st_size, sizeof(char));
         fread(pcmbuf, sizeof(char), filestat.st_size, fp_pcm);
 
         send(client_fd, pcmbuf, filestat.st_size, 0);
-        printf("send size = %d\n", filestat.st_size);
-        close(client_fd);
+        printf("pcm send\n");
 }
 
 /*

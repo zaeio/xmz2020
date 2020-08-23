@@ -21,3 +21,4 @@ unsigned char CS_48x48_calling[4][288];       //正在呼叫
 unsigned char CS_48x48_cancel[6][288];        //按#号键取消
 unsigned char CS_48x48_wrong_number[5][288];  //门牌号错误
 unsigned char CS_48x48_retry[3][288];         //请重试
+unsigned char CS_48x48_online[3][288];        //已接通

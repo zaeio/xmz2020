@@ -19,7 +19,6 @@
 #define LEN_HINT 512
 #define LEN_OPTION_SHORT 512
 
-FILE *fp_pcm_i = NULL;
 int sample_rate = 8000; //8000 12000 11025 16000 22050 24000 32000 44100 48000
 int volume = 6;
 int save_time = 20000;              // set save time(ms)
@@ -125,14 +124,8 @@ static void create_pcm_file_name(const char *path, char *file_path, int sample_r
 }
 
 /*
- * open_pcm_file: open pcm file.
- * path[IN]: pointer to the path which will be checking.
- * fp_pcm_i[OUT]: pointer of opened pcm file.
- * return: void.
- */
 static void open_pcm_file(const char *path)
 {
-        /* create the pcm file name */
         char file_path[255];
         if (0 == check_dir(path))
         {
@@ -140,13 +133,12 @@ static void open_pcm_file(const char *path)
         }
         sprintf(file_path, "%saudio_frame.pcm", path);
 
-        /* open file */
         fp_pcm_i = fopen(file_path, "w+b");
         if (NULL == fp_pcm_i)
         {
                 printf("open pcm file: %s error\n", file_path);
         }
-}
+}*/
 
 static void close_pcm_file(FILE *fp_pcm_i)
 {
@@ -165,15 +157,20 @@ static void close_pcm_file(FILE *fp_pcm_i)
  * path[IN]: save directory path, if NULL, will not save anymore.
  * save_time[IN]: captured time of pcm data, unit is second.
  */
-void ai_capture_loop()
+void ai_capture_loop(void *arg)
 {
+        FILE *fp_pcm_i = NULL;
         unsigned long long start_ts = 0; // use to save capture start time
         unsigned long long end_ts = 0;   // the last frame time
         struct frame frame = {0};
         int ret = AK_FAILED;
+        char *filename = (char *)arg;
+        //  printf("pcm filename = %s\n", filename);
         // int ai_handle_id = *(int *)arg;
 
-        open_pcm_file(ai_save_path);
+        // open_pcm_file(ai_save_path);
+
+        fp_pcm_i = fopen(filename, "w+b");
         if (fp_pcm_i == NULL)
         {
                 printf("ERROR: pcm file is NULL\n");
@@ -240,7 +237,7 @@ int ak_ai_init()
         if (ak_ai_open(&param, &ai_handle_id))
         {
                 ak_print_normal(MODULE_ID_AI, "*** ak_ai_open failed. ***\n");
-                goto exit;
+                return -1;
         }
 
         int frame_len = get_pcm_frame_len(sample_rate, channel_num);
@@ -249,7 +246,7 @@ int ak_ai_init()
         {
                 ak_print_normal(MODULE_ID_AI, "*** set ak_ai_set_frame_interval failed. ***\n");
                 ak_ai_close(ai_handle_id);
-                goto exit;
+                return -1;
         }
 
         /* set source, source include mic and linein */
@@ -258,7 +255,7 @@ int ak_ai_init()
         {
                 ak_print_normal(MODULE_ID_AI, "*** set ak_ai_open failed. ***\n");
                 ak_ai_close(ai_handle_id);
-                goto exit;
+                return -1;
         }
 
         ret = ak_ai_set_gain(ai_handle_id, 4);
@@ -266,7 +263,7 @@ int ak_ai_init()
         {
                 ak_print_normal(MODULE_ID_AI, "*** set ak_ai_set_volume failed. ***\n");
                 ak_ai_close(ai_handle_id);
-                goto exit;
+                return -1;
         }
 
         ak_ai_set_volume(ai_handle_id, volume);
@@ -288,7 +285,7 @@ int ak_ai_init()
         {
                 ak_print_error(MODULE_ID_AI, "*** set ak_ai_clear_frame_buffer failed. ***\n");
                 ak_ai_close(ai_handle_id);
-                goto exit;
+                return -1;
         }
 
         ret = ak_ai_start_capture(ai_handle_id);
@@ -296,7 +293,7 @@ int ak_ai_init()
         {
                 ak_print_error(MODULE_ID_AI, "*** ak_ai_start_capture failed. ***\n");
                 ak_ai_close(ai_handle_id);
-                goto exit;
+                return -1;
         }
 
         // ai_capture_loop(ai_handle_id, ai_save_path, save_time);
@@ -306,7 +303,7 @@ int ak_ai_init()
         // {
         //         ak_print_error(MODULE_ID_AI, "*** ak_ai_stop_capture failed. ***\n");
         //         ak_ai_close(ai_handle_id);
-        //         goto exit;
+        //         return -1;
         // }
 
         // ret = ak_ai_close(ai_handle_id);
@@ -314,12 +311,6 @@ int ak_ai_init()
         // {
         //         ak_print_normal(MODULE_ID_AI, "*** ak_ai_close failed. ***\n");
         // }
-
-exit:
-        /* close file handle */
-        close_pcm_file(fp_pcm_i);
-        ak_print_normal(MODULE_ID_AI, "******** exit ai demo ********\n");
-        return ret;
 }
 
 void ak_ai_disable()

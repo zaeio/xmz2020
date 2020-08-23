@@ -50,8 +50,8 @@ static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct timeval start;
 
 extern int server_fd, connfd;
-pthread_t indoor_vi_thread, indoor_ai_thread, indoor_bell_thread, tcp_indoor_thread;
-
+pthread_t indoor_vi_thread, indoor_vo_thread, indoor_ai_thread, indoor_ao_thread;
+pthread_t indoor_bell_thread, tcp_indoor_thread;
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
 extern int play_bell_flag;    //播放铃声使能
@@ -170,6 +170,12 @@ void waiting_dots(void)
         }
 }
 
+void put_gray_map_routine(void *arg)
+{
+        char *graymap = (char *)arg;
+        put_gray_map(0, 0, graymap, FRAME_WIDTH, FRAME_HEIGHT);
+}
+
 void receive_indoor_routine()
 {
         char buf[896] = {0};
@@ -211,9 +217,18 @@ void receive_indoor_routine()
                 {
                         printf("BUFF_CMD_HANGUP\n");
                         play_bell_flag = 0;
-                        pthread_cancel(indoor_bell_thread);
-                        indoor_current_state = STATE_WELCOME;
+                        usleep(200000);
                         refresh_screen();
+                        // pthread_cancel(indoor_bell_thread);
+                        indoor_current_state = STATE_WELCOME;
+                }
+                break;
+                case BUFF_CMD_AUDIO:
+                {
+                        printf("BUFF_CMD_AUDIO\n");
+                        char *outdoor_pcm = "/mnt/frame/outdoor.pcm";
+                        usleep(200000);
+                        pthread_create(&indoor_ao_thread, NULL, (void *)read_pcm_routine, outdoor_pcm);
                 }
                 break;
                 default:
@@ -321,7 +336,7 @@ int main(int argc, char **argv)
                                         {
                                                 indoor_current_state = STATE_ONLINE;
                                                 play_bell_flag = 0;
-                                                pthread_cancel(indoor_bell_thread);
+                                                // pthread_cancel(indoor_bell_thread);
                                                 send_answer();
 
                                                 // play_bell_flag = 1;
@@ -335,10 +350,11 @@ int main(int argc, char **argv)
                                         {
                                                 indoor_current_state = STATE_WELCOME;
                                                 play_bell_flag = 0;
-                                                send_hangup();
-                                                pthread_cancel(indoor_bell_thread);
-                                                usleep(100000);
+                                                send_hangup(1);
+                                                usleep(200000);
                                                 refresh_screen();
+                                                // pthread_cancel(indoor_bell_thread);
+                                                
                                         }
                                 }
                                 break;
@@ -347,13 +363,15 @@ int main(int argc, char **argv)
                                         if (ai_capture_enable == 0)
                                         {
                                                 ai_capture_enable = 1;
-                                                pthread_create(&indoor_ai_thread, NULL, (void *)ai_capture_loop, &ai_handle_id);
+                                                char *indoor_pcm = "/mnt/frame/indoor.pcm";
+                                                pthread_create(&indoor_ai_thread, NULL, (void *)ai_capture_loop, indoor_pcm);
                                         }
                                         else if (ai_capture_enable == 1)
                                         {
                                                 ai_capture_enable = 0;
-                                                usleep(100000);
-                                                read_pcm(3, "/mnt/frame/audio_frame.pcm");
+                                                send_audio(1);
+                                                // char *intdoor_pcm = "/mnt/frame/indoor.pcm";
+                                                // pthread_create(&indoor_ao_thread, NULL, (void *)read_pcm_routine, intdoor_pcm);
                                         }
                                 }
                                 break;
@@ -362,18 +380,22 @@ int main(int argc, char **argv)
                                         break;
                                 case 4: //@摄像头
                                 {
-                                        if (monitor_enable == 0)
+                                        if (indoor_current_state == STATE_WELCOME)
                                         {
-                                                send_camera(1);
-                                                monitor_enable = 1;
-                                                // vi_capture_enable = 1;
-                                                // pthread_create(&indoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
-                                        }
-                                        else if (monitor_enable == 1)
-                                        {
-                                                send_camera(0);
-                                                monitor_enable = 0;
-                                                refresh_screen();
+                                                if (monitor_enable == 0)
+                                                {
+                                                        send_camera(1);
+                                                        monitor_enable = 1;
+                                                        // vi_capture_enable = 1;
+                                                        // pthread_create(&indoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                                                }
+                                                else if (monitor_enable == 1)
+                                                {
+                                                        send_camera(0);
+                                                        monitor_enable = 0;
+                                                        usleep(200000);
+                                                        refresh_screen();
+                                                }
                                         }
                                 }
                                 break;

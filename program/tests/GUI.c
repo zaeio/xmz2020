@@ -52,8 +52,8 @@ struct ts_textbox textboxes[TEXTBOXES_NUM];
 struct timeval start;
 
 extern int client_fd;
-pthread_t outdoor_vi_thread, tcp_outdoor_thread, outdoor_waitdots_thread, outdoor_ai_thread;
-
+pthread_t outdoor_vi_thread, outdoor_ai_thread, outdoor_ao_thread;
+pthread_t tcp_outdoor_thread, outdoor_waitdots_thread;
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
 extern int ai_handle_id;
@@ -84,6 +84,9 @@ void print_usage_info()
         case STATE_NUM_ERROR:
                 put_const_string_center(xres / 7 * 2, 250, CS_48x48_wrong_number, 5, 48, 1);
                 put_const_string_center(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
+                break;
+        case STATE_ONLINE:
+                put_const_string_center(xres / 7 * 2, 250, CS_48x48_online, 3, 48, 1);
                 break;
 
         default:
@@ -231,6 +234,7 @@ void receive_outdoor_routine()
                         printf("BUFF_CMD_ANSWER\n");
                         outdoor_current_state = STATE_ONLINE; //STATE_ONLINE
                         vi_capture_enable = 1;
+                        print_usage_info();
                         pthread_cancel(outdoor_waitdots_thread);
                         pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
                 }
@@ -246,7 +250,7 @@ void receive_outdoor_routine()
                         else
                         {
                                 vi_capture_enable = 0;
-                                pthread_cancel(outdoor_vi_thread);
+                                // pthread_cancel(outdoor_vi_thread);
                         }
                 }
                 break;
@@ -254,7 +258,7 @@ void receive_outdoor_routine()
                 {
                         printf("BUFF_CMD_HANGUP\n");
                         vi_capture_enable = 0;
-                        pthread_cancel(outdoor_vi_thread);
+                        // pthread_cancel(outdoor_vi_thread);
                         pthread_cancel(outdoor_waitdots_thread);
                         outdoor_current_state = STATE_WELCOME;
 
@@ -262,6 +266,7 @@ void receive_outdoor_routine()
                         buttons[10].fill_colidx[0] = 6;
                         buttons[10].fill_colidx[1] = 7;
                         buttons[10].text = "[";
+                        textbox_clear(&textboxes[0]);
                         refresh_screen();
                 }
                 break;
@@ -270,6 +275,14 @@ void receive_outdoor_routine()
                         printf("BUFF_CMD_UNLOCK\n");
                         buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 6;
                         button_draw(&buttons[12]);
+                }
+                break;
+                case BUFF_CMD_AUDIO:
+                {
+                        printf("BUFF_CMD_AUDIO\n");
+                        char *indoor_pcm = "/mnt/frame/indoor.pcm";
+                        usleep(200000);
+                        pthread_create(&outdoor_ao_thread, NULL, (void *)read_pcm_routine, indoor_pcm);
                 }
                 break;
                 default:
@@ -397,15 +410,16 @@ int main(int argc, char **argv)
                                         {
                                                 vi_capture_enable = 0;
                                                 ai_capture_enable = 0;
-                                                send_hangup();
+                                                send_hangup(0);
                                                 // pthread_cancel(ai_thread);
-                                                pthread_cancel(outdoor_vi_thread);
+                                                // pthread_cancel(outdoor_vi_thread);
 
                                                 outdoor_current_state = STATE_WELCOME;
                                                 //将#修改为接听
                                                 buttons[10].fill_colidx[0] = 6;
                                                 buttons[10].fill_colidx[1] = 7;
                                                 buttons[10].text = "[";
+                                                textbox_clear(&textboxes[0]);
                                                 button_draw(&buttons[10]);
 
                                                 // refresh_screen();
@@ -421,11 +435,24 @@ int main(int argc, char **argv)
                                                 print_usage_info();
                                         }
                                         break;
-                                case 12:
+                                case 12: //锁
                                         buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
                                         button_draw(&buttons[12]);
                                         break;
-                                case 13:
+                                case 13: //麦克风
+                                        if (ai_capture_enable == 0)
+                                        {
+                                                ai_capture_enable = 1;
+                                                char *outtdoor_pcm = "/mnt/frame/outdoor.pcm";
+                                                pthread_create(&outdoor_ai_thread, NULL, (void *)ai_capture_loop, outtdoor_pcm);
+                                        }
+                                        else if (ai_capture_enable == 1)
+                                        {
+                                                ai_capture_enable = 0;
+                                                send_audio(0);
+                                                //        char *intdoor_pcm = "/mnt/frame/indoor.pcm";
+                                                //         pthread_create(&indoor_ao_thread, NULL, (void *)read_pcm_routine, &intdoor_pcm);
+                                        }
                                         break;
                                 default: //数字键
                                         textbox_addchar(&textboxes[0], '0' + i);
