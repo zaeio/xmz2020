@@ -32,7 +32,7 @@ extern int send_sound_flag;
 extern int recv_sound_flag;
 int client_fd, server_fd, connfd;
 struct sockaddr_in servaddr, connaddr; //服务器ip，接入的客户端ip
-char *server_addr_str = "192.168.1.118";
+char *server_addr_str = "192.168.1.120";
 
 // pthread_t indoor_bell_thread, indoor_vi_thread, indoor_ai_thread;
 // pthread_t outdoor_vi_thread, outdoor_ai_thread, outdoor_waitdots_thread;
@@ -120,7 +120,7 @@ char get_header(char *buff, int length)
                         // printf("head = [%d %d %d %d] \n", buff[i], buff[i + 1], buff[i + 2], buff[i + 3]);
                         if (buff[i] == BUFF_H1 && buff[i + 1] == BUFF_H2 && buff[i + 2] == BUFF_H3)
                         {
-                                if (buff[i + 3] >= 0x01 && buff[i + 3] <= 0x07)
+                                if (buff[i + 3] >= 0x01 && buff[i + 3] <= 0x08)
                                 {
                                         // printf("headder confirmed  %d\n", buff[i + 3]);
                                         return buff[i + 3];
@@ -130,7 +130,7 @@ char get_header(char *buff, int length)
         return 0;
 }
 
-void send_Vframe(char *graymap) //
+void send_Vframe(char *graymap, int flag) //
 {
         int i;
         char buff[4] = {0};
@@ -139,26 +139,36 @@ void send_Vframe(char *graymap) //
         buff[1] = BUFF_H2;
         buff[2] = BUFF_H3;
         buff[3] = BUFF_CMD_IMG;
-        send(client_fd, buff, 4, 0);
-        // printf("BUFF_CMD_IMG send\n");
-        // send(socket_fd, graymap,IMG_WIDTH*IMG_HEIGHT,0);
-        for (i = 0; i < IMG_HEIGHT; i++)
+        if (flag == 0) //向服务器发送
         {
-                send(client_fd, &graymap[i * IMG_WIDTH], IMG_WIDTH, 0);
+                send(client_fd, buff, 4, 0);
+                // printf("BUFF_CMD_IMG send\n");
+                for (i = 0; i < IMG_HEIGHT; i++)
+                {
+                        send(client_fd, &graymap[i * IMG_WIDTH], IMG_WIDTH, 0);
+                }
+        }
+        else
+        {
+                send(connfd, buff, 4, 0);
+                for (i = 0; i < IMG_HEIGHT; i++)
+                {
+                        int send_size = send(connfd, &graymap[i * 608], 608, 0);
+                }
         }
 }
 
-void send_camera(char flag)
+void send_camera(char cmd, char flag)
 {
         char buff[5] = {0};
 
         buff[0] = BUFF_H1; //包头
         buff[1] = BUFF_H2;
         buff[2] = BUFF_H3;
-        buff[3] = BUFF_CMD_CAMERA;
+        buff[3] = cmd; //用于区分打开室外摄像头还是室内摄像头
         buff[4] = flag;
         send(connfd, buff, 5, 0);
-        printf("BUFF_CMD_CAMERA %d send\n", flag);
+        printf("BUFF_CMD_CAMERA cmd = %d   flag = %d send\n", cmd, flag);
 }
 
 void send_unlock()
@@ -209,11 +219,11 @@ void send_hangup(char flag)
         buff[3] = BUFF_CMD_HANGUP;
         if (flag == 0)
         {
-                send(client_fd, buff, 4, 0);//向服务器发送
+                send(client_fd, buff, 4, 0); //向服务器发送
         }
         else
         {
-                send(connfd, buff, 4, 0);//向客户端发送
+                send(connfd, buff, 4, 0); //向客户端发送
         }
         printf("BUFF_CMD_HANGUP send\n");
 }
@@ -227,11 +237,11 @@ void send_audio(char flag)
         buff[3] = BUFF_CMD_AUDIO;
         if (flag == 0)
         {
-                send(client_fd, buff, 4, 0);//向服务器发送
+                send(client_fd, buff, 4, 0); //向服务器发送
         }
         else
         {
-                send(connfd, buff, 4, 0);//向客户端发送
+                send(connfd, buff, 4, 0); //向客户端发送
         }
         printf("BUFF_CMD_AUDIO send\n");
 }

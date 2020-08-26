@@ -477,8 +477,8 @@ uint32_t *yuv420_to_rgb(char *yuv_data, int width, int height)
                         //printf("Y = %X,  U = %X,  V = %X\n", Y, U, V);
 
                         char R = (char)(1.0 * Y + 1.402 * (V - 128));
-                        char G =  (char)(1.0 * Y - 0.344 * (U - 128) - 0.714 * (V - 128));
-                        char B =  (char)(1.0 * Y + 1.772 * (U - 128));
+                        char G = (char)(1.0 * Y - 0.344 * (U - 128) - 0.714 * (V - 128));
+                        char B = (char)(1.0 * Y + 1.772 * (U - 128));
 
                         if (R < 0)
                                 R = 0;

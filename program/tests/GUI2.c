@@ -50,7 +50,7 @@ static struct ts_button buttons[NR_BUTTONS]; //按钮数组
 struct timeval start;
 
 extern int server_fd, connfd;
-pthread_t indoor_vi_thread, indoor_vo_thread, indoor_ai_thread, indoor_ao_thread;
+pthread_t indoor_vi_thread, indoor_vi_thread, indoor_vo_thread, indoor_ai_thread, indoor_ao_thread;
 pthread_t indoor_bell_thread, tcp_indoor_thread;
 extern int ai_capture_enable; //录音持续使能
 extern int vi_capture_enable; //摄像持续使能
@@ -74,27 +74,27 @@ void print_usage_info()
         switch (indoor_current_state)
         {
         case STATE_WELCOME:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
-                put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+                put_const_string_center((int)(xres / 8 * 3.5), 250, CS_48x48_input_number, 6, 48, 1);
+                // put_const_string_center(xres / 8 * 3.5, 340, CS_48x48_press_to_call, 6, 48, 1);
                 break;
 
         default:
                 put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
-                put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
+                // put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
                 break;
         }
 }
 
-static void refresh_screen(void)
+static void refresh_screen(int mode)
 {
         int i;
-
-        fillrect(0, 0, xres - 1, yres - 1, 0); //背景
-        put_const_string_center(xres / 8 * 3, 60, CS_48x48_sysname, 8, 48, 1);
+        fillrect(0, 0, FRAME_WIDTH, yres - 1, 0); //背景
+        put_const_string_center((int)(xres / 8 * 3.5), 60, CS_48x48_sysname, 8, 48, 1);
         // print_usage_info();
 
-        for (i = 0; i < NR_BUTTONS; i++)
-                button_draw(&buttons[i]);
+        if (mode == 1) //全屏刷新
+                for (i = 0; i < NR_BUTTONS; i++)
+                        button_draw(&buttons[i]);
 }
 
 void init_widget()
@@ -137,7 +137,7 @@ void init_widget()
         buttons[3].y = 0;
         buttons[4].y = btn_h;
 
-        refresh_screen();
+        refresh_screen(1);
 }
 
 void print_time()
@@ -188,7 +188,7 @@ void receive_indoor_routine()
         while ((recvlen = recv(connfd, buf, 896, 0)) > 0)
         {
                 char file_name[255];
-                // printf("recvlen = %d\n", recvlen);
+                // printf("indoor recvlen = %d\n", recvlen);
                 switch (get_header(buf, recvlen))
                 {
                 case BUFF_CMD_IMG: //frame
@@ -197,11 +197,13 @@ void receive_indoor_routine()
                         //先结束上一帧
                         if (framecount > 0)
                         {
+                                // printf("framelength = %d\n", recvcount);
                                 put_gray_map(0, 0, graymap, FRAME_WIDTH, FRAME_HEIGHT);
                                 free(graymap);
                                 recvcount = 0;
                         }
                         framecount++;
+                        //新建graymap
                         graymap = (char *)calloc(FRAME_WIDTH * FRAME_HEIGHT, sizeof(char));
                 }
                 break;
@@ -215,10 +217,11 @@ void receive_indoor_routine()
                 break;
                 case BUFF_CMD_HANGUP:
                 {
-                        printf("BUFF_CMD_HANGUP\n");
+                        printf("BUFF_CMD_HANGUP, framecount = \n", framecount);
                         play_bell_flag = 0;
+                        vi_capture_enable = 0;
                         usleep(200000);
-                        refresh_screen();
+                        refresh_screen(0);
                         // pthread_cancel(indoor_bell_thread);
                         indoor_current_state = STATE_WELCOME;
                 }
@@ -291,7 +294,7 @@ int main(int argc, char **argv)
         init_widget();
         ai_handle_id = ak_ai_init();
         ao_handle_id = ak_ao_init();
-        ak_vi_init();
+        ak_vi_init(5);
 
         if (setup_server_tcp())
                 pthread_create(&tcp_indoor_thread, NULL, (void *)receive_indoor_routine, NULL);
@@ -350,11 +353,11 @@ int main(int argc, char **argv)
                                         {
                                                 indoor_current_state = STATE_WELCOME;
                                                 play_bell_flag = 0;
+                                                vi_capture_enable = 0;
                                                 send_hangup(1);
                                                 usleep(200000);
-                                                refresh_screen();
+                                                refresh_screen(0);
                                                 // pthread_cancel(indoor_bell_thread);
-                                                
                                         }
                                 }
                                 break;
@@ -384,17 +387,30 @@ int main(int argc, char **argv)
                                         {
                                                 if (monitor_enable == 0)
                                                 {
-                                                        send_camera(1);
+                                                        send_camera(BUFF_CMD_OUTCAMERA, 1);
                                                         monitor_enable = 1;
-                                                        // vi_capture_enable = 1;
-                                                        // pthread_create(&indoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
                                                 }
                                                 else if (monitor_enable == 1)
                                                 {
-                                                        send_camera(0);
+                                                        send_camera(BUFF_CMD_OUTCAMERA, 0);
                                                         monitor_enable = 0;
+                                                        // vi_capture_enable = 0;
                                                         usleep(200000);
-                                                        refresh_screen();
+                                                        refresh_screen(0);
+                                                }
+                                        }
+                                        else if (indoor_current_state == STATE_ONLINE)
+                                        {
+                                                if (vi_capture_enable == 0)
+                                                {
+                                                        int res_id = 5;
+                                                        vi_capture_enable = 1;
+                                                        pthread_create(&indoor_vi_thread, NULL, (void *)vi_capture_loop, &res_id);
+                                                }
+                                                else
+                                                {
+                                                        vi_capture_enable = 0;
+                                                        send_camera(BUFF_CMD_INCAMERA, 0);
                                                 }
                                         }
                                 }

@@ -44,7 +44,7 @@ int channel_num = 0;
 char *isp_path = "/etc/jffs2/isp_ar0230_dvp.conf";
 // char *save_path = "/mnt/frame/";
 int main_res_id = 6; //used resolution
-int sub_res_id = 0;
+int sub_res_id = 5;
 int vi_capture_enable = 0;
 
 /* support resolution list */
@@ -216,13 +216,17 @@ void show_frame(void *arg)
         ak_print_normal(MODULE_ID_VI, "capture finish\n\n");
 }*/
 
-void vi_capture_loop()
+void vi_capture_loop(void *arg)
 {
         struct video_input_frame frame;
         uint32_t *RGBmap;
         char *graymap;
+        int res_id = *(int *)arg;
+
+        // int res_id = 6;
 
         printf("*** vi capture start ***\n");
+        // printf("w = %d    h = %d\n", res_group[res_id][0], res_group[res_id][1]);
 
         while (vi_capture_enable)
         {
@@ -236,9 +240,14 @@ void vi_capture_loop()
                         // RGBmap = yuv420_to_rgb(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
                         // put_rgb_map(0, 0, RGBmap, res_group[main_res_id][0], res_group[main_res_id][1]);
 
-                        graymap = yuv420_to_gray(frame.vi_frame.data, res_group[main_res_id][0], res_group[main_res_id][1]);
-                        // put_gray_map(0, 0, graymap, res_group[main_res_id][0], res_group[main_res_id][1]);
-                        send_Vframe(graymap);
+                        graymap = yuv420_to_gray(frame.vi_frame.data, res_group[res_id][0], res_group[res_id][1]);
+                        // put_gray_map(0, 0, graymap, res_group[res_id][0], res_group[res_id][1]);
+                        if (res_id == 6)
+                                send_Vframe(graymap, 0);
+                        else
+                        {
+                                send_Vframe(graymap, 1);
+                        }
 
                         free(RGBmap);
                         free(graymap);
@@ -262,7 +271,7 @@ void vi_capture_loop()
  * 4??your main video progress must stop
  */
 //int main(int argc, char **argv)
-int ak_vi_init()
+int ak_vi_init(int res_id)
 {
         /* start the application */
         sdk_run_config config;
@@ -280,8 +289,8 @@ int ak_vi_init()
 	 * step 0: global value initialize
 	 */
         int ret = -1; //return value
-        int width = res_group[main_res_id][0];
-        int height = res_group[main_res_id][1];
+        int width = res_group[res_id][0];
+        int height = res_group[res_id][1];
         int subwidth = res_group[sub_res_id][0];
         int subheight = res_group[sub_res_id][1];
 

@@ -217,7 +217,7 @@ int ak_vi_change_chn_fps(VI_CHN chn_id, int frame_rate);
  */
 int ak_vi_switch_mode(VI_DEV dev_id, enum ak_vi_daynight_mode mode);
 
-void vi_capture_loop();
-int ak_vi_init();
+void vi_capture_loop(void *arg);
+int ak_vi_init(int res_id);
 void ak_vi_disable();
 #endif

@@ -27,7 +27,7 @@
 #define STATE_ONLINE 2
 #define STATE_NUM_ERROR 3
 
-#define FRAME_WIDTH 896  //584, 640
+#define FRAME_WIDTH 608  //584, 640
 #define FRAME_HEIGHT 600 //600, 480
 // #define XRES 1024
 // #define YRES 600
@@ -70,45 +70,73 @@ static void sig(int sig)
 
 void print_usage_info()
 {
-        fillrect(0, 200, xres / 7 * 4, 400, 0); //信息背景
+        fillrect(0, 200, FRAME_WIDTH, 400, 0); //信息背景
         switch (outdoor_current_state)
         {
         case STATE_WELCOME:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2, 250, CS_48x48_input_number, 6, 48, 1);
                 // put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
                 break;
         case STATE_CALL:
-                put_const_string_center(xres / 7 * 2 - 40, 250, CS_48x48_calling, 4, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2 - 40, 250, CS_48x48_calling, 4, 48, 1);
                 // put_const_string_center(xres / 7 * 2, 340, CS_48x48_cancel, 6, 48, 1);
                 break;
         case STATE_NUM_ERROR:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_wrong_number, 5, 48, 1);
-                put_const_string_center(xres / 7 * 2, 340, CS_48x48_retry, 3, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2, 250, CS_48x48_wrong_number, 5, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2, 340, CS_48x48_retry, 3, 48, 1);
                 break;
         case STATE_ONLINE:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_online, 3, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2, 250, CS_48x48_online, 3, 48, 1);
                 break;
 
         default:
-                put_const_string_center(xres / 7 * 2, 250, CS_48x48_input_number, 6, 48, 1);
+                put_const_string_center(FRAME_WIDTH / 2, 250, CS_48x48_input_number, 6, 48, 1);
                 // put_const_string_center(xres / 7 * 2, 340, CS_48x48_press_to_call, 6, 48, 1);
                 break;
         }
 }
 
-static void refresh_screen(void)
+static void refresh_screen(int mode)
 {
         int i;
 
-        fillrect(0, 0, xres - 1, yres - 1, 0); //背景
+        usleep(200000);
+        fillrect(0, 0, FRAME_WIDTH, yres - 1, 0); //背景
         put_const_string_center(xres / 7 * 2, 60, CS_48x48_sysname, 8, 48, 1);
         print_usage_info();
 
-        for (i = 0; i < TEXTBOXES_NUM; i++)
-                textbox_draw(&textboxes[0]);
+        if (mode == 0) //仅去视频
+        {
+                button_draw(&buttons[12]);
+                button_draw(&buttons[13]);
+        }
+        if (mode == 1) //全屏刷新
+        {
+                //将#修改为接听
+                buttons[10].fill_colidx[0] = 6;
+                buttons[10].fill_colidx[1] = 7;
+                buttons[10].text = "[";
+                buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
+                textbox_clear(&textboxes[0]);
 
-        for (i = 0; i < NR_BUTTONS; i++)
-                button_draw(&buttons[i]);
+                for (i = 0; i < TEXTBOXES_NUM; i++)
+                        textbox_draw(&textboxes[0]);
+
+                for (i = 0; i < NR_BUTTONS; i++)
+                        button_draw(&buttons[i]);
+        }
+        else if (mode == 2) //挂断刷新
+        {
+                //将#修改为接听
+                buttons[10].fill_colidx[0] = 6;
+                buttons[10].fill_colidx[1] = 7;
+                buttons[10].text = "[";
+                buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
+                textbox_clear(&textboxes[0]);
+                button_draw(&buttons[10]);
+                button_draw(&buttons[12]);
+                button_draw(&buttons[13]);
+        }
 }
 
 void init_widget()
@@ -116,7 +144,7 @@ void init_widget()
         int i, j;
 
         /* Initialize buttons */
-        int btn_number_w = xres / 7;
+        int btn_number_w = (1024 - FRAME_WIDTH) / 3; // xres / 7;
         int btn_number_h = yres / 5;
 
         memset(&buttons, 0, sizeof(buttons));
@@ -140,9 +168,12 @@ void init_widget()
 
         buttons[12].font_colidx[0] = buttons[12].font_colidx[1] = 8;
 
-        buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
-        buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
-        buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = btn_number_w * 6;
+        // buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = btn_number_w * 4;
+        // buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = btn_number_w * 5;
+        // buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = btn_number_w * 6;
+        buttons[10].x = buttons[1].x = buttons[4].x = buttons[7].x = FRAME_WIDTH;
+        buttons[0].x = buttons[2].x = buttons[5].x = buttons[8].x = FRAME_WIDTH + btn_number_w;
+        buttons[11].x = buttons[3].x = buttons[6].x = buttons[9].x = FRAME_WIDTH + btn_number_w * 2;
 
         buttons[7].y = buttons[8].y = buttons[9].y = btn_number_h;
         buttons[4].y = buttons[5].y = buttons[6].y = btn_number_h * 2;
@@ -168,9 +199,9 @@ void init_widget()
         buttons[13].text = "&"; //麦克风
 
         /* Initialize textboxes */
-        textboxes[0].x = xres / 7 * 4;
+        textboxes[0].x = FRAME_WIDTH;
         textboxes[0].y = 0;
-        textboxes[0].w = xres / 7 * 3;
+        textboxes[0].w = 1024 - FRAME_WIDTH;
         textboxes[0].h = yres / 5;
         textboxes[0].fill_colidx = 4; //4
         textboxes[0].border_colidx = 0;
@@ -183,7 +214,7 @@ void init_widget()
                         ;
         }
 
-        refresh_screen();
+        refresh_screen(1);
 }
 
 void print_time()
@@ -218,40 +249,68 @@ void waiting_dots(void)
 
 void receive_outdoor_routine()
 {
-        char buf[896] = {0};
+        char buf[608] = {0};
+        char *graymap;
 
-        printf("receiving\n");
         int recvlen = 0;
-        while ((recvlen = recv(client_fd, buf, 896, 0)) > 0)
+        int framecount = 0; //帧数
+        int recvcount = 0;  //文件长度
+        printf("receiving\n");
+        while ((recvlen = recv(client_fd, buf, 608, 0)) > 0)
         {
                 char file_name[255];
-                printf("recvlen = %d\n", recvlen);
+                // printf("outdoor recvlen = %d\n", recvlen);
+
                 switch (get_header(buf, recvlen))
                 {
-                        break;
+                case BUFF_CMD_IMG: //frame
+                {
+                        // printf("BUFF_CMD_IMG\n");
+                        //先结束上一帧
+                        if (framecount > 0)
+                        {
+                                // printf("framelength = %d\n", recvcount);
+                                put_gray_map(0, 0, graymap, FRAME_WIDTH, FRAME_HEIGHT);
+                                free(graymap);
+                                button_draw(&buttons[12]);
+                                button_draw(&buttons[13]);
+                                recvcount = 0;
+                        }
+                        framecount++;
+                        graymap = (char *)calloc(FRAME_WIDTH * FRAME_HEIGHT, sizeof(char));
+                }
+                break;
                 case BUFF_CMD_ANSWER:
                 {
                         printf("BUFF_CMD_ANSWER\n");
                         outdoor_current_state = STATE_ONLINE; //STATE_ONLINE
-                        vi_capture_enable = 1;
+
                         print_usage_info();
                         pthread_cancel(outdoor_waitdots_thread);
-                        pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                        int res_id = 6;
+                        vi_capture_enable = 1;
+                        pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, &res_id);
                 }
                 break;
-                case BUFF_CMD_CAMERA:
+                case BUFF_CMD_OUTCAMERA:
                 {
                         printf("BUFF_CMD_CAMERA %d\n", buf[4]);
                         if (buf[4] == 1)
                         {
+                                int res_id = 6;
                                 vi_capture_enable = 1;
-                                pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, NULL);
+                                pthread_create(&outdoor_vi_thread, NULL, (void *)vi_capture_loop, &res_id);
                         }
                         else
                         {
                                 vi_capture_enable = 0;
                                 // pthread_cancel(outdoor_vi_thread);
                         }
+                }break;
+                case BUFF_CMD_INCAMERA:
+                {
+                        printf("BUFF_CMD_INCAMERA %d\n", buf[4]);
+                        refresh_screen(0);
                 }
                 break;
                 case BUFF_CMD_HANGUP:
@@ -262,12 +321,7 @@ void receive_outdoor_routine()
                         pthread_cancel(outdoor_waitdots_thread);
                         outdoor_current_state = STATE_WELCOME;
 
-                        //将#修改为接听
-                        buttons[10].fill_colidx[0] = 6;
-                        buttons[10].fill_colidx[1] = 7;
-                        buttons[10].text = "[";
-                        textbox_clear(&textboxes[0]);
-                        refresh_screen();
+                        refresh_screen(2);
                 }
                 break;
                 case BUFF_CMD_UNLOCK:
@@ -286,7 +340,20 @@ void receive_outdoor_routine()
                 }
                 break;
                 default:
-                        break;
+                {
+                        //写入graymap
+                        int i;
+                        if (graymap != NULL)
+                        {
+                                for (i = 0; i < recvlen; i++)
+                                {
+                                        if (recvcount + i < FRAME_WIDTH * FRAME_HEIGHT)
+                                                graymap[recvcount + i] = buf[i];
+                                }
+                                recvcount += recvlen;
+                        }
+                }
+                break;
                 }
         }
         printf("receive finished\n");
@@ -331,7 +398,7 @@ int main(int argc, char **argv)
         init_widget();
         ai_handle_id = ak_ai_init();
         ao_handle_id = ak_ao_init();
-        ak_vi_init();
+        ak_vi_init(6);
         setup_client_tcp();
         pthread_create(&tcp_outdoor_thread, NULL, (void *)receive_outdoor_routine, NULL);
 
@@ -371,8 +438,9 @@ int main(int argc, char **argv)
                                 {
                                 case 10: //#
                                 {
-                                        if (outdoor_current_state == STATE_WELCOME)
+                                        if (outdoor_current_state == STATE_WELCOME) //接听
                                         {
+                                                //判断门牌号
                                                 int floor, num;
                                                 floor = (textboxes[0].text[0] - '0') * 10 + (textboxes[0].text[1] - '0');
                                                 num = (textboxes[0].text[2] - '0') * 10 + (textboxes[0].text[3] - '0');
@@ -406,7 +474,7 @@ int main(int argc, char **argv)
                                                         print_usage_info();
                                                 }
                                         }
-                                        else if (outdoor_current_state == STATE_CALL || outdoor_current_state == STATE_ONLINE)
+                                        else if (outdoor_current_state == STATE_CALL || outdoor_current_state == STATE_ONLINE) //挂断
                                         {
                                                 vi_capture_enable = 0;
                                                 ai_capture_enable = 0;
@@ -415,15 +483,9 @@ int main(int argc, char **argv)
                                                 // pthread_cancel(outdoor_vi_thread);
 
                                                 outdoor_current_state = STATE_WELCOME;
-                                                //将#修改为接听
-                                                buttons[10].fill_colidx[0] = 6;
-                                                buttons[10].fill_colidx[1] = 7;
-                                                buttons[10].text = "[";
-                                                textbox_clear(&textboxes[0]);
-                                                button_draw(&buttons[10]);
 
-                                                // refresh_screen();
-                                                print_usage_info();
+                                                refresh_screen(2);
+                                                // print_usage_info();
                                         }
                                 }
                                 break;
